@@ -334,7 +334,7 @@ export function NavBar() {
       {/* CHAT-ONLY POPUP */}
       {open && (
         <div
-          className="fixed top-14 right-4 z-50 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+          className="fixed top-14 right-4 z-50 rounded-xl shadow-2xl flex flex-col overflow-hidden"
           style={{
             background: '#0a1628',
             border: '1px solid rgba(16,185,129,0.25)',

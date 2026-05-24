@@ -29,7 +29,7 @@ export function WorldModelSection() {
 
       <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-6">
         {/* Video */}
-        <div className="relative rounded-2xl overflow-hidden"
+        <div className="relative rounded-xl overflow-hidden"
           style={{ border: '1px solid rgba(16,185,129,0.2)', background: '#000', aspectRatio: '16/9' }}>
           <video
             ref={videoRef}

@@ -13,7 +13,7 @@ export interface RehearseMetrics {
 
 export function MetricsPanel({ metrics }: { metrics: RehearseMetrics }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5">
+    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-5">
       <div className="flex items-end gap-6">
         <div>
           <div className="text-[10px] uppercase tracking-widest text-zinc-500">

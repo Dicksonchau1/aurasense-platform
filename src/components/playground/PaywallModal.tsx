@@ -42,7 +42,7 @@ export function PaywallModal({ open, reasonBlock, onClose }: Props) {
       onClick={onClose}
     >
       <div
-        className="w-[min(440px,92vw)] rounded-2xl border border-white/10 bg-[#0d1828] p-6 shadow-2xl"
+        className="w-[min(440px,92vw)] rounded-xl border border-white/10 bg-[#0d1828] p-6 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <p className="text-[10px] font-mono uppercase tracking-[0.25em] text-emerald-400">Upgrade required</p>

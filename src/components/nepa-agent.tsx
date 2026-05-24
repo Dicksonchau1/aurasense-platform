@@ -75,7 +75,7 @@ export function NepaAgent() {
       {/* Floating avatar button */}
       <button
         onClick={() => setOpen(o => !o)}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg transition-transform hover:scale-105 active:scale-95"
+        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-xl flex items-center justify-center shadow-lg transition-transform hover:scale-105 active:scale-95"
         style={{ background: 'linear-gradient(135deg, #0a1628 0%, #0d2137 100%)', border: '1px solid rgba(16,185,129,0.4)' }}
         aria-label="Open NEPA Agent">
         {/* Avatar face */}
@@ -97,7 +97,7 @@ export function NepaAgent() {
 
       {/* Panel */}
       {open && (
-        <div className="fixed bottom-24 right-6 z-50 w-80 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+        <div className="fixed bottom-24 right-6 z-50 w-80 rounded-xl shadow-2xl flex flex-col overflow-hidden"
           style={{ background: '#0a1628', border: '1px solid rgba(16,185,129,0.25)', maxHeight: '520px' }}>
 
           {/* Header */}

@@ -73,7 +73,7 @@ export function MockRuntime() {
 
   return (
     <div className="space-y-5">
-      <div className="aspect-video w-full overflow-hidden rounded-2xl border border-white/10 bg-black">
+      <div className="aspect-video w-full overflow-hidden rounded-xl border border-white/10 bg-black">
         <div className="grid h-full place-items-center text-zinc-600">
           <div className="text-center">
             <div className="text-xs uppercase tracking-widest text-zinc-500">

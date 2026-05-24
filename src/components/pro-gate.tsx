@@ -13,7 +13,7 @@ export function ProGate({ feature, children, isPro = false }: ProGateProps) {
   if (isPro) return <>{children}</>
   return (
     <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-      <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5"
+      <div className="w-14 h-14 rounded-xl flex items-center justify-center mb-5"
         style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
         <Lock className="w-6 h-6" style={{ color: 'var(--lock-red)' }} />
       </div>

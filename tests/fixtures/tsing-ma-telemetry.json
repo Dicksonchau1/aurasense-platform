@@ -1,0 +1,35 @@
+{
+  "fixture_id": "tsing-ma-drone-inspection-300ticks",
+  "description": "300-tick drone inspection telemetry fixture — Tsing Ma Bridge, 12 m/s NW wind shear event at tick 150",
+  "session_context": {
+    "deployment_id": "deploy-tsing-ma-2026-05-22",
+    "run_id": "run-tsing-ma-fixture-001",
+    "lat": 22.3492,
+    "lon": 114.0823,
+    "alt_m": 47,
+    "structural_class": "suspension_bridge",
+    "regime": {
+      "wind_speed_ms": 8,
+      "wind_direction_deg": 315,
+      "payload_kg": 1.2,
+      "temperature_c": 24
+    },
+    "regime_hash": "a3f8c2d1e5b7904612f3a8c1d4e0b293"
+  },
+  "wind_shear_event": {
+    "onset_tick": 150,
+    "wind_speed_ms": 12,
+    "wind_direction_deg": 315,
+    "duration_ticks": 40,
+    "expected_lateral_drift_ms2": 0.34,
+    "expected_engine_time_constant_ms": 340
+  },
+  "ticks": "[Generated on test run — 300 ShapeOfChangeEnvelope objects with observed/predicted GPS, IMU, motor RPM channels. Wind shear event introduces lateral delta spike at tick 150-190 with recovery signature matching engine_response_time_constant=340ms. High-modulator frames expected at ticks 150, 165, 182. Fixture generator: tests/generators/tsing-ma-generator.ts]",
+  "expected_substrate_actions": [
+    { "tick_range": [150, 155], "action": "correct:wind_model", "note": "substrate corrects wind field on shear onset" },
+    { "tick_range": [155, 165], "action": "project:trajectory", "note": "substrate projects lateral drift trajectory" },
+    { "tick_range": [165, 185], "action": "frame:captured", "note": "high-modulator frames captured during shear" },
+    { "tick_range": [190, 195], "action": "correct:engine_model", "note": "engine time constant locked in" },
+    { "tick_range": [192, 192], "action": "flag:anomaly", "note": "residual divergence flag if engine correction insufficient" }
+  ]
+}
