@@ -3,8 +3,15 @@ import { useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { tierForEmail, tierLabel, type Tier } from '@/lib/auth/domain-router'
 import { Mail, Globe, Stethoscope, Plane, Sparkles } from 'lucide-react'
+"use client";
 
-export const dynamic = 'force-dynamic'
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
+import Card from "@/components/shell/Card";
+import Field from "@/components/shell/Field";
+import Button from "@/components/shell/Button";
 
 const TIER_HINTS: Record<Tier, { label: string; lede: string; icon: React.ElementType; accent: string }> = {
   free: {
@@ -28,10 +35,11 @@ const TIER_HINTS: Record<Tier, { label: string; lede: string; icon: React.Elemen
 }
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('')
-  const [sent, setSent] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
 
   // Live preview of which tier this email will resolve to. Pure client-side
   // inference — the real assignment happens in /auth/callback after sign-in.
@@ -193,8 +201,63 @@ export default function LoginPage() {
           {' '}and{' '}
           <a href="/privacy" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'underline' }}>Privacy Policy</a>.
           {' '}See <a href="/pricing" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'underline' }}>pricing</a>.
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setErr(null);
+    setLoading(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      const params = new URLSearchParams(window.location.search);
+      router.push(params.get("redirect") ?? "/");
+      router.refresh();
+    } catch (e: any) {
+      setErr(e?.message ?? "Sign in failed");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="grid place-items-center min-h-[480px]">
+      <Card className="w-full max-w-md">
+        <h1 className="aura-h1 mb-1">Sign in</h1>
+        <p className="aura-sub mb-5">Access AuraSense Playground.</p>
+        <form onSubmit={onSubmit} className="space-y-4">
+          <Field
+            name="email"
+            label="Email"
+            type="email"
+            required
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@aurasensehk.com"
+          />
+          <Field
+            name="password"
+            label="Password"
+            type="password"
+            required
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+          />
+          {err && (
+            <div className="aura-panel" style={{ background: "rgba(185,28,28,0.08)", borderColor: "rgba(185,28,28,0.2)", color: "#7f1d1d" }}>
+              {err}
+            </div>
+          )}
+          <Button type="submit" disabled={loading} className="w-full">
+            {loading ? "Signing in…" : "Sign in"}
+          </Button>
+        </form>
+        <p className="aura-sub text-center mt-5">
+          No account? <Link href="/register" className="aura-link">Register</Link>
         </p>
-      </div>
+      </Card>
     </div>
-  )
+  );
 }

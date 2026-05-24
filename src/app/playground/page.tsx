@@ -1,164 +1,109 @@
-'use client'
+"use client";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
-import { useEffect, useRef, useState } from 'react'
-import { VideoCanvas, type VideoCanvasHandle } from '@/components/playground/VideoCanvas'
-import { HudLayer } from '@/components/playground/HudLayer'
-import { BlockToggle } from '@/components/playground/BlockToggle'
-import { LatencyMeter } from '@/components/playground/LatencyMeter'
-import { PaywallModal } from '@/components/playground/PaywallModal'
-import { ShareCard } from '@/components/playground/ShareCard'
-import {
-  FREE_BLOCKS,
-  type NepaBlockKey,
-  type NepaDetection,
-} from '@/lib/playground-types'
+// Valid tokens are checked here. For production, move to a server action / Supabase lookup.
+// For now, add invited token strings to this Set.
+const VALID_TOKENS = new Set<string>([
+  // "tok_abc123",  // example — add real tokens here or replace with Supabase lookup
+]);
 
-interface BillingMe {
-  ok: boolean
-  authenticated: boolean
-  plan: 'starter' | 'pro' | 'team' | 'enterprise'
-}
+function PlaygroundInner() {
+  const params = useSearchParams();
+  const token = params.get("token") ?? "";
+  const [status, setStatus] = useState<"checking" | "valid" | "invalid">("checking");
 
-export default function PlaygroundPage() {
-  const canvasRef = useRef<VideoCanvasHandle>(null)
-  const [slotId, setSlotId] = useState<string | null>(null)
-  const [pcState, setPcState] = useState<RTCPeerConnectionState>('new')
-  const [error, setError] = useState<string | null>(null)
-  const [active, setActive] = useState<NepaBlockKey[]>([...FREE_BLOCKS])
-  const [billing, setBilling] = useState<BillingMe | null>(null)
-  const [detections, setDetections] = useState<NepaDetection[]>([])
-  const [lastP95, setLastP95] = useState<number | null>(null)
-  const [paywallFor, setPaywallFor] = useState<NepaBlockKey | null>(null)
-
-  // Hydrate plan from existing /api/billing/me.
   useEffect(() => {
-    let dead = false
-    fetch('/api/billing/me')
-      .then((r) => r.json() as Promise<BillingMe>)
-      .then((b) => { if (!dead) setBilling(b) })
-      .catch(() => {})
-    return () => { dead = true }
-  }, [])
+    // Brief delay so the check feels intentional, not a flash
+    const t = setTimeout(() => {
+      setStatus(VALID_TOKENS.has(token) ? "valid" : "invalid");
+    }, 400);
+    return () => clearTimeout(t);
+  }, [token]);
 
-  // Subscribe to detections via the same SSE stream the LatencyMeter uses.
-  useEffect(() => {
-    if (!slotId) return
-    const es = new EventSource(`/api/edge/stream/${encodeURIComponent(slotId)}/events`)
-    es.onmessage = (ev) => {
-      try {
-        const payload = JSON.parse(ev.data) as {
-          p95_ms?: number
-          detections?: NepaDetection[]
-        }
-        if (Array.isArray(payload.detections)) setDetections(payload.detections)
-        if (typeof payload.p95_ms === 'number') setLastP95(payload.p95_ms)
-      } catch { /* ignore */ }
-    }
-    return () => es.close()
-  }, [slotId])
-
-  // Push block-chain changes to the edge.
-  useEffect(() => {
-    if (!slotId) return
-    void fetch(`/api/edge/stream/${encodeURIComponent(slotId)}/control`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ chain: active }),
-    }).catch(() => {})
-  }, [active, slotId])
-
-  const isFree = !billing?.authenticated || billing.plan === 'starter'
-  const planLabel = billing?.plan ?? 'starter'
-
-  const startStream = async () => {
-    setError(null)
-    if (!canvasRef.current) return
-    await canvasRef.current.start()
+  if (status === "checking") {
+    return (
+      <div style={center}>
+        <div style={{ fontSize: 13, color: "#6e7c8e", fontFamily: "monospace" }}>Verifying invite…</div>
+      </div>
+    );
   }
-  const stopStream = () => canvasRef.current?.stop()
 
+  if (status === "invalid") {
+    return (
+      <div style={{ ...center, flexDirection: "column", gap: 20, padding: 32 }}>
+        <div style={{ fontSize: 56 }}>🔒</div>
+        <h1 style={{ color: "#ffd479", fontSize: 28, margin: 0, fontFamily: "system-ui, -apple-system, sans-serif" }}>Invite Required</h1>
+        <p style={{ color: "#9aa8b8", fontSize: 15, maxWidth: 420, textAlign: "center", lineHeight: 1.6, fontFamily: "system-ui, -apple-system, sans-serif", margin: 0 }}>
+          The Playground clinical trainer is available to invited clinical and partner accounts only.
+          {token && (
+            <span style={{ display: "block", marginTop: 8, fontFamily: "monospace", fontSize: 12, color: "#6e7c8e" }}>
+              Token <code style={{ color: "#ff7070" }}>{token.slice(0, 12)}…</code> was not recognised.
+            </span>
+          )}
+        </p>
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center" }}>
+          <a href="/request-access" style={btnPrimary}>Request Access →</a>
+          <a href="/" style={btnSecondary}>← Back to AuraSense</a>
+        </div>
+        <p style={{ fontSize: 12, color: "#6e7c8e", fontFamily: "system-ui, -apple-system, sans-serif" }}>
+          Already have an invite? Check your email for a link with a valid token.
+        </p>
+      </div>
+    );
+  }
+
+  // ── VALID TOKEN ── render the trainer
   return (
-    <main className="min-h-dvh bg-[#070e1a] px-4 py-8 text-white md:px-10">
-      <div className="mx-auto max-w-6xl">
-        <header className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="text-[10px] font-mono uppercase tracking-[0.25em] text-emerald-400">
-              AuraSense · Playground
-            </p>
-            <h1 className="mt-1 text-3xl font-bold">Live NEPA inference</h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[10px] font-mono uppercase tracking-wider text-white/70">
-              plan · {planLabel}
-            </span>
-            <span className={`rounded-full border px-3 py-1 text-[10px] font-mono uppercase tracking-wider ${
-              pcState === 'connected'
-                ? 'border-emerald-400/40 bg-emerald-400/10 text-emerald-300'
-                : 'border-white/10 bg-white/[0.04] text-white/50'
-            }`}>
-              webrtc · {pcState}
-            </span>
-          </div>
-        </header>
+    <div style={{ padding: "40px 24px", maxWidth: 1000, margin: "0 auto", fontFamily: "system-ui, -apple-system, sans-serif" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+        <span style={{ fontSize: 11, fontFamily: "monospace", color: "#10b981", letterSpacing: "0.2em", textTransform: "uppercase" }}>Playground · Clinical Trainer</span>
+        <span style={{ fontSize: 11, background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.3)", color: "#10b981", padding: "2px 8px", borderRadius: 20, fontFamily: "monospace" }}>🟢 LIVE</span>
+      </div>
+      <h1 style={{ color: "#dbe5f1", fontSize: 32, margin: "0 0 6px", fontWeight: 700 }}>WHO 7-Step Hand Hygiene</h1>
+      <p style={{ color: "#9aa8b8", fontSize: 14, marginBottom: 32 }}>
+        STDP perception · 8-lane pre-engine · HRI envelope coaching · Camera-enabled
+      </p>
 
-        <section className="mt-6 grid gap-6 lg:grid-cols-[2fr_1fr]">
-          <div className="space-y-4">
-            <VideoCanvas
-              ref={canvasRef}
-              onSlot={setSlotId}
-              onState={setPcState}
-              onError={(e) => setError(e.message)}
-            >
-              <HudLayer detections={detections} />
-            </VideoCanvas>
-
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={startStream}
-                className="rounded-lg bg-emerald-500 px-4 py-2 text-xs font-bold uppercase tracking-wider text-[#062017] hover:bg-emerald-400"
-              >
-                Start webcam
-              </button>
-              <button
-                type="button"
-                onClick={stopStream}
-                className="rounded-lg border border-white/10 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white/70 hover:bg-white/5"
-              >
-                Stop
-              </button>
-              {error ? (
-                <span className="self-center text-xs text-rose-400">{error}</span>
-              ) : null}
-            </div>
-
-            <BlockToggle
-              active={active}
-              isFree={isFree}
-              onToggle={(b, next) =>
-                setActive((cur) => (next ? Array.from(new Set([...cur, b])) : cur.filter((x) => x !== b)))
-              }
-              onPaywall={(b) => setPaywallFor(b)}
-            />
-          </div>
-
-          <aside className="space-y-4">
-            <LatencyMeter slotId={slotId} />
-            <ShareCard
-              title="NEPA live"
-              subtitle={`${active.length} block${active.length === 1 ? '' : 's'} active · plan ${planLabel}`}
-              p95Ms={lastP95}
-              blocks={active}
-            />
-          </aside>
-        </section>
+      {/* Camera / trainer placeholder — swap with actual HandwashTrainer component */}
+      <div style={{
+        background: "#141a2a", border: "2px dashed #1c2840", borderRadius: 12,
+        minHeight: 420, display: "flex", alignItems: "center", justifyContent: "center",
+        flexDirection: "column", gap: 12, color: "#6e7c8e",
+      }}>
+        <div style={{ fontSize: 32 }}>📷</div>
+        <div style={{ fontSize: 14, fontFamily: "monospace" }}>HandwashTrainer loading…</div>
+        <div style={{ fontSize: 12 }}>Import your HandwashingModule component here</div>
       </div>
 
-      <PaywallModal
-        open={paywallFor != null}
-        reasonBlock={paywallFor}
-        onClose={() => setPaywallFor(null)}
-      />
-    </main>
-  )
+      <p style={{ marginTop: 24, fontSize: 12, color: "#6e7c8e" }}>
+        Accessed via token · <a href="/" style={{ color: "#3dc8d8" }}>AuraSense NCM</a>
+      </p>
+    </div>
+  );
+}
+
+const center: React.CSSProperties = {
+  minHeight: "80vh", display: "flex", alignItems: "center", justifyContent: "center",
+};
+const btnPrimary: React.CSSProperties = {
+  textDecoration: "none", display: "inline-block",
+  background: "#ffd479", color: "#1a1622", fontWeight: 700,
+  padding: "10px 18px", borderRadius: 6, fontSize: 14,
+  fontFamily: "system-ui, -apple-system, sans-serif",
+};
+const btnSecondary: React.CSSProperties = {
+  textDecoration: "none", display: "inline-block",
+  background: "transparent", color: "#9aa8b8", fontWeight: 500,
+  padding: "10px 18px", borderRadius: 6, fontSize: 14, border: "1px solid #1c2840",
+  fontFamily: "system-ui, -apple-system, sans-serif",
+};
+
+export default function PlaygroundPage() {
+  return (
+    <Suspense fallback={<div style={{ ...center, color: "#6e7c8e", fontFamily: "monospace", fontSize: 13 }}>Loading…</div>}>
+      <PlaygroundInner />
+    </Suspense>
+  );
 }

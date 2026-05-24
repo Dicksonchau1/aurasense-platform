@@ -30,3 +30,6 @@ Thumbs.db
 =======
 node_modules
 >>>>>>> cc9d6d4 (Refactor code structure for improved readability and maintainability)
+.env.vercel
+.next
+supabase/.temp/
