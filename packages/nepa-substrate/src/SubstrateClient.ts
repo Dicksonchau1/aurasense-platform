@@ -17,15 +17,39 @@ export class SubstrateClient {
   constructor(private config: SubstrateConfig) {}
 
   async connect(): Promise<void> {
-    // Connect to Python substrate (placeholder)
+    // Optionally: handshake with backend
     this.connected = true;
   }
   async disconnect(): Promise<void> {
     this.connected = false;
   }
   async status(): Promise<SubstrateStatus> {
+    // Optionally: fetch from backend
     return { status: this.connected ? "connected" : "disconnected" };
   }
+
+  // Fetch all envelopes from backend REST API
+  async getEnvelopes(): Promise<Envelope[]> {
+    const resp = await fetch('/api/substrate/envelopes');
+    if (!resp.ok) throw new Error('Failed to fetch envelopes');
+    return await resp.json();
+  }
+
+  // Fetch all audit events from backend REST API
+  async getAuditEvents(): Promise<AuditEvent[]> {
+    const resp = await fetch('/api/substrate/audit-events');
+    if (!resp.ok) throw new Error('Failed to fetch audit events');
+    return await resp.json();
+  }
+
+  // Fetch a trace by ID from backend REST API
+  async getTrace(traceId: string): Promise<AdaptationTrace> {
+    const resp = await fetch(`/api/substrate/traces/${encodeURIComponent(traceId)}`);
+    if (!resp.ok) throw new Error('Failed to fetch trace');
+    return await resp.json();
+  }
+
+  // Stubs for other substrate methods
   async getLayerManager(): Promise<{ admitted_count: number; list: LayerDescriptor[] }> {
     return { admitted_count: 0, list: [] };
   }

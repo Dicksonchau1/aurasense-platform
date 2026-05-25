@@ -4,26 +4,22 @@ const substrate = new SubstrateClient({});
 
 export function getStdpDebugger() {
   return {
-    // Connect to the substrate runtime
     connect: async () => substrate.connect(),
     disconnect: async () => substrate.disconnect(),
 
-    // Fetch a trace by ID (stub: returns dummy data)
+    // Fetch a trace by ID from backend
     inspectTrace: async (traceId: string): Promise<AdaptationTrace> => {
-      // Replace with real substrate call when available
-      return { trace: [1, 2, 3] };
+      return await substrate.getTrace(traceId);
     },
 
-    // Fetch all envelopes (stub: returns empty array)
+    // Fetch all envelopes from backend
     getEnvelopes: async (): Promise<Envelope[]> => {
-      // Replace with real substrate call when available
-      return [];
+      return await substrate.getEnvelopes();
     },
 
-    // Fetch all audit events (stub: returns empty array)
+    // Fetch all audit events from backend
     getAuditEvents: async (): Promise<AuditEvent[]> => {
-      // Replace with real substrate call when available
-      return [];
+      return await substrate.getAuditEvents();
     },
   };
 }
