@@ -1,0 +1,1 @@
+# Makes tests a package for module-based test discovery

@@ -1,0 +1,1 @@
+{"version":3,"file":"processors.d.ts","sourceRoot":"","sources":["processors.ts"],"names":[],"mappings":"AACA,OAAO,EAAE,mBAAmB,EAAE,kBAAkB,EAAE,MAAM,UAAU,CAAC;AAGnE,wBAAgB,kBAAkB,CAAC,SAAS,EAAE,mBAAmB,GAAG,kBAAkB,CASrF;AAED,wBAAgB,iBAAiB,CAAC,SAAS,EAAE,mBAAmB,GAAG,kBAAkB,CAWpF;AAED,wBAAgB,gBAAgB,CAAC,SAAS,EAAE,mBAAmB,GAAG,kBAAkB,CAWnF"}

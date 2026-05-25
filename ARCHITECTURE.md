@@ -1,0 +1,11 @@
+## ArduPilot Panel Suite + NERM
+/api/atlas/ardupilot/calibration                🟢 real  (5-sensor wizard, step-by-step, HMAC commit)
+/api/atlas/ardupilot/modes                      🟢 real  (6-slot mode grid, mode-change history)
+/api/atlas/ardupilot/logs                       🟢 real  (5 seeded logs with anomaly metadata)
+/api/atlas/ardupilot/logs/[logId]/replay        🟢 real  (deterministic frame generation from ts_ms)
+/api/nepa/nerm/status                           🟢 real  (drifting NermStatus, mode-aware)
+/api/nepa/nerm/mode                             🟢 real  (mode setter + audit chain)
+CalibrationSection.tsx                          🟢 Tier 1 live  (5-sensor wizard, confidence bars, audit trail)
+ModesSection.tsx                                🟢 Tier 1 live  (6-slot grid, mode editor, arm/disarm)
+LogReplaySection.tsx                            🟢 Tier 1 live  (scrubber, attitude indicator, anomaly markers)
+NepaAgent                                       🟢 Tier 1 live  (live API query engine, NERM strip, 10 intents)

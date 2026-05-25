@@ -1,0 +1,19 @@
+openapi: 3.1.0
+info:
+  title: AuraSense Rehearse-3D API
+  version: 1.0.0
+  summary: MBIS façade map, HK 3D city, missions, telemetry, defects, AI, geofence.
+  description: |
+    Single backend for the Rehearse-3D frontend. All MBIS / CSDI / HKO / HKCAD
+    access is proxied here — browsers never call third parties directly.
+  contact: { name: AuraSense, email: eng@aurasensehk.com }
+  license: { name: Proprietary }
+servers:
+  - url: https://api.aurasensehk.com/v1
+    description: Production
+  - url: https://staging.api.aurasensehk.com/v1
+    description: Staging
+  - url: http://localhost:8000/v1
+    description: Local dev
+security:
+  - bearerAuth: []

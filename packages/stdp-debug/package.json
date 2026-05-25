@@ -1,0 +1,12 @@
+{
+  "name": "stdp-debug",
+  "version": "0.0.0",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "scripts": {
+    "build": "tsc -b"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3"
+  }
+}

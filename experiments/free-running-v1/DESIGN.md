@@ -1,0 +1,1 @@
+(Paste sections 1–12 of the design doc here verbatim as per your source material.)

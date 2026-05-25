@@ -1,0 +1,6 @@
+{
+  "extends": ["next", "next/core-web-vitals"],
+  "compilerOptions": {
+    "types": ["jest", "@testing-library/jest-dom"]
+  }
+}
