@@ -1,3 +1,7 @@
+// ============================================================
+// STUB - returns ok timestamps. Wire to real polygon engine.
+// Created during emergency recovery on 2026-05-26.
+// ============================================================
 import type { RehearseSessionContext, TelemetryFrame } from './types';
 
 export interface OrchestratorDeps {

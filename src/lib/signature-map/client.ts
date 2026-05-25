@@ -1,3 +1,7 @@
+// ============================================================
+// STUB - lookup returns null. Wire to real signature map.
+// Created during emergency recovery on 2026-05-26.
+// ============================================================
 export type SignatureMapClient = {
   lookup: (key: string) => Promise<any | null>;
   upsert: (key: string, value: any) => Promise<void>;

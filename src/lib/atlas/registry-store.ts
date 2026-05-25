@@ -160,7 +160,8 @@ export {
   buildTopologyGraph
 }
 
-// Added: zod schema for asset form input (used by EditAssetSheet)
+// SHIM - decide real schema location and move this out of registry-store.
+// Added 2026-05-26 to satisfy EditAssetSheet import.
 import { z } from 'zod';
 export const assetInputSchema = z.object({
   id: z.string().optional(),

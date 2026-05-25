@@ -1,3 +1,7 @@
+// ============================================================
+// STUB - no-op session lifecycle. Wire to real NEPA substrate.
+// Created during emergency recovery on 2026-05-26.
+// ============================================================
 export type SubstrateClient = {
   startSession: (ctx: any) => Promise<{ sessionId: string }>;
   endSession: (id: string) => Promise<void>;
