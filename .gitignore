@@ -69,3 +69,8 @@ desktop.ini
 *.swp
 *.swo
 *~
+# Block rogue Python app/ directory at root (must live under src/app or _archive)
+/app/
+
+# Block rogue app/ at root (canonical is src/app/)
+/app/

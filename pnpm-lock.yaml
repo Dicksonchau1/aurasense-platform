@@ -136,7 +136,7 @@ importers:
         specifier: ^29.1.1
         version: 29.1.1(@noble/hashes@1.8.0)
       next:
-        specifier: ^16.2.6
+        specifier: 16.2.6
         version: 16.2.6(@babel/core@7.29.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       node-mocks-http:
         specifier: ^1.17.2
