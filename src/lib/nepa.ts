@@ -26,3 +26,7 @@ export function sha256(input: string | object): string {
 }
 
 export default { envelope, jitter, sha256 };
+// Added: ISO-formatted current timestamp helper
+export function nowISO(): string {
+  return new Date().toISOString();
+}
