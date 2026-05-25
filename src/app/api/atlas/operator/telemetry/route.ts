@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { getTodayUsage, getUserPlan } from '@/lib/billing/quota'
-import { QUOTAS } from '@/lib/billing/plans'
 import { envelope, jitter } from '@/lib/nepa'
 import type { LiveUsageTelemetry, DailyUsageRecord } from '@/types/operator'
 
@@ -8,8 +7,7 @@ export async function GET(req: Request) {
   const t = Date.now()
   // TODO: Replace with real user ID extraction
   const userId = 'demo-user-id'
-  const plan = await getUserPlan(userId)
-  const quota = QUOTAS[plan]
+  const { plan, quota } = await getUserPlan(userId)
   const today = await getTodayUsage(userId)
   // Mock history_7d if no Supabase
   const history_7d: DailyUsageRecord[] = Array.from({length:7}, (_, i) => {

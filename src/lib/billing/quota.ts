@@ -1,23 +1,23 @@
 // STUB - quota tracking. Wire to real Supabase usage rollups.
-// Created during recovery on 2026-05-26.
-
-import { QUOTAS, type PlanKey } from './plans';
+import { QUOTAS, type PlanKey, type QuotaSpec } from './plans';
 
 export interface DailyUsageRecord {
   date: string;
+  frames_used: number;
+  bytes_used: number;
   flights: number;
-  postflightCompute: number;
 }
 
 export async function getTodayUsage(_userId: string): Promise<DailyUsageRecord> {
   return {
     date: new Date().toISOString().slice(0, 10),
+    frames_used: 0,
+    bytes_used: 0,
     flights: 0,
-    postflightCompute: 0,
   };
 }
 
-export async function getUserPlan(_userId: string): Promise<{ plan: PlanKey; quota: typeof QUOTAS[PlanKey] }> {
+export async function getUserPlan(_userId: string): Promise<{ plan: PlanKey; quota: QuotaSpec }> {
   const plan: PlanKey = 'starter';
   return { plan, quota: QUOTAS[plan] };
 }
