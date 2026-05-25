@@ -1,13 +1,29 @@
-// Minimal stub for stdp-debug
 import { Envelope, AuditEvent, AdaptationTrace, SubstrateClient } from 'nepa-substrate';
 
-// Example: substrate client for future debugging integration
 const substrate = new SubstrateClient({});
-// await substrate.connect(); // Uncomment to connect to substrate runtime
 
 export function getStdpDebugger() {
   return {
-    inspectTrace: (traceId: string): Partial<AdaptationTrace> => ({ traceId, delta: 1.0 })
-    // In the future, use substrate to fetch real traces, envelopes, or audit events
+    // Connect to the substrate runtime
+    connect: async () => substrate.connect(),
+    disconnect: async () => substrate.disconnect(),
+
+    // Fetch a trace by ID (stub: returns dummy data)
+    inspectTrace: async (traceId: string): Promise<AdaptationTrace> => {
+      // Replace with real substrate call when available
+      return { trace: [1, 2, 3] };
+    },
+
+    // Fetch all envelopes (stub: returns empty array)
+    getEnvelopes: async (): Promise<Envelope[]> => {
+      // Replace with real substrate call when available
+      return [];
+    },
+
+    // Fetch all audit events (stub: returns empty array)
+    getAuditEvents: async (): Promise<AuditEvent[]> => {
+      // Replace with real substrate call when available
+      return [];
+    },
   };
 }
