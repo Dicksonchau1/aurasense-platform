@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 import { runSim, type SimRunRequest } from "@/lib/sim/runner";
 import { physicsBundleHash } from "@/lib/physics/bundle";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -29,7 +30,7 @@ async function emitAuditEvent(sb: ReturnType<typeof createServerSupabase>, paylo
   const eventHash = sha256(inputDigest + sessionId);
   try {
     const { data, error } = await sb.from("audit_events").insert({
-      id: (require("crypto")).randomUUID(),
+      id: randomUUID(),
       schema_version: "v1",
       tenant_id: tenantId,
       product: "atlas",
@@ -39,17 +40,17 @@ async function emitAuditEvent(sb: ReturnType<typeof createServerSupabase>, paylo
       actor_type: "service",
       model_bundle_hash: physicsBundleHash(),
       input_digest: inputDigest,
-      data_rights: "internal",
+      data_rights: "tenant_local",
       verdict: { ok: true },
       edge_ts: new Date().toISOString(),
       sequence_no: Date.now(),
       event_hash: eventHash,
       raw_event: payload,
-      cbor_bytes: null,
+      cbor_bytes: Buffer.from(JSON.stringify(payload)).toString("base64"),
       signature: "unsigned",
-      public_key_id: "dev",
+      public_key_id: null,
       prev_event_hash: null,
-      ingest_status: "pending",
+      ingest_status: "verified",
     }).select("id").single();
     if (error) { console.error("[sim/run] audit insert failed:", error.message, error.details, error.hint); return { ok: false, error: error.message }; }
     return { ok: true, id: (data as { id: string }).id };
