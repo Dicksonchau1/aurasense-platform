@@ -53,7 +53,7 @@ export default function WorldModelPage() {
             minHeight: 0,
           }}
         >
-          <WorldScene height={undefined as unknown as number} />
+          <WorldScene />
 
           {/* HUD top-left */}
           <div style={{ position: "absolute", top: 10, left: 10, display: "flex", flexDirection: "column", gap: 4, pointerEvents: "none" }}>
@@ -129,3 +129,4 @@ const btnG: React.CSSProperties = {
   background: "rgba(255,255,255,.06)",
   color: "#cfd8e3",
 };
+
