@@ -32,6 +32,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             <Link href="/dashboard/world-model" className="atlas-nb"><span className="atlas-nb-ico">W</span> World Model</Link>
             <Link href="/dashboard/fleet" className="atlas-nb"><span className="atlas-nb-ico">F</span> Fleet</Link>
             <Link href="/dashboard/learning-loop" className="atlas-nb"><span className="atlas-nb-ico">L</span> Learning Loop</Link>
+            <Link href="/dashboard/compliance" className="atlas-nb"><span className="atlas-nb-ico">K</span> Compliance</Link>
 
             <div className="atlas-ns">Platform</div>
             <Link href="/atlas/nepa" className="atlas-nb"><span className="atlas-nb-ico">N</span> NEPA</Link>

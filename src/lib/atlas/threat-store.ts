@@ -279,11 +279,3 @@ export {
   getAllTracks,
   getDomainSummaries
 }
-
-// Added during recovery: ingest an anomaly event into the threat store.
-import type { AnomalyEvent } from "../runtime/anomaly-bus";
-export function ingestAnomalyEvent(event: AnomalyEvent): void {
-  // STUB: in production, persist to anomalies table and update tracks.
-  // For now, this is a no-op so the import resolves.
-  void event;
-}
