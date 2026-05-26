@@ -7,6 +7,7 @@ import AgentDock from "./_components/AgentDock";
 import LayerPanel from "./_components/LayerPanel";
 import BuildingsPanel from "./_components/BuildingsPanel";
 import AnomaliesPanel from "./_components/AnomaliesPanel";
+import PhysicsOverlay from "@/components/physics/PhysicsOverlay";
 
 export default function WorldModelPage() {
   return (
@@ -95,6 +96,7 @@ export default function WorldModelPage() {
 
       {/* Agent dock (floating) */}
       <AgentDock />
+      <PhysicsOverlay />
     </main>
   );
 }
