@@ -1,0 +1,47 @@
+import { NextResponse } from "next/server";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+const BACKEND_URL = (process.env.NEPA_BACKEND_URL ?? process.env.AURASENSE_NEPA_URL ?? "http://localhost:8000").replace(/\/+$/, "");
+const FETCH_TIMEOUT_MS = Number(process.env.NEPA_BACKEND_TIMEOUT_MS ?? "5000");
+const SERVICE_TOKEN = process.env.NEPA_BACKEND_TOKEN ?? "";
+
+async function fetchTile(z: string, x: string, y: string): Promise<Response> {
+  const ctl = new AbortController();
+  const id = setTimeout(() => ctl.abort(), FETCH_TIMEOUT_MS);
+  try {
+    const url = BACKEND_URL + "/api/mbis/tiles/" + z + "/" + x + "/" + y + ".glb";
+    return await fetch(url, {
+      signal: ctl.signal,
+      headers: SERVICE_TOKEN ? { Authorization: "Bearer " + SERVICE_TOKEN } : {},
+      cache: "no-store",
+    });
+  } finally {
+    clearTimeout(id);
+  }
+}
+
+export async function GET(_req: Request, { params }: { params: Promise<{ z: string; x: string; y: string }> }) {
+  const { z, x, y } = await params;
+  if (!/^\d+$/.test(z) || !/^\d+$/.test(x) || !/^\d+$/.test(y)) {
+    return NextResponse.json({ ok: false, error: "Invalid tile coordinates" }, { status: 400 });
+  }
+  try {
+    const upstream = await fetchTile(z, x, y);
+    if (!upstream.ok) {
+      return NextResponse.json({ ok: false, error: "MBIS backend HTTP " + upstream.status }, { status: 502 });
+    }
+    const buf = await upstream.arrayBuffer();
+    return new NextResponse(buf, {
+      status: 200,
+      headers: {
+        "Content-Type": "model/gltf-binary",
+        "Cache-Control": "public, max-age=3600",
+        "X-MBIS-Tile": z + "/" + x + "/" + y,
+      },
+    });
+  } catch (err: any) {
+    return NextResponse.json({ ok: false, error: err?.message ?? "MBIS proxy failed" }, { status: 502 });
+  }
+}

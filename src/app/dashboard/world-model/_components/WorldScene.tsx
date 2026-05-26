@@ -1,7 +1,8 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
+import { GLTFLoader } from "three-stdlib";
 
 interface Building {
   id: string;
@@ -11,6 +12,8 @@ interface Building {
   height_m: number | null;
   floor_count: number | null;
   risk_score: number | null;
+  mbis_id: string | null;
+  gltf_url: string | null;
   source: string | null;
 }
 
@@ -26,7 +29,7 @@ interface Snapshot {
   data: { buildings?: Building[]; drones?: Drone[] };
 }
 
-const PROCEDURAL_FALLBACK: Array<{ x: number; z: number; w: number; d: number; h: number; c: number }> = [
+const PROCEDURAL_FALLBACK = [
   { x: 0, z: 0, w: 12, d: 8, h: 60, c: 0x4a6080 },
   { x: 20, z: 5, w: 8, d: 6, h: 45, c: 0x3d5470 },
   { x: -18, z: -8, w: 10, d: 10, h: 80, c: 0x5a7290 },
@@ -42,15 +45,21 @@ const PROCEDURAL_FALLBACK: Array<{ x: number; z: number; w: number; d: number; h
 ];
 
 const EARTH_R = 6378137;
+const MBIS_ZOOM = 16;
 
-function wgs84ToEnu(lat: number, lng: number, originLat: number, originLng: number): { east: number; north: number } {
-  const dLat = ((lat - originLat) * Math.PI) / 180;
-  const dLng = ((lng - originLng) * Math.PI) / 180;
-  const meanLat = ((lat + originLat) / 2) * Math.PI / 180;
-  return {
-    east: dLng * EARTH_R * Math.cos(meanLat),
-    north: dLat * EARTH_R,
-  };
+function wgs84ToEnu(lat: number, lng: number, oLat: number, oLng: number) {
+  const dLat = ((lat - oLat) * Math.PI) / 180;
+  const dLng = ((lng - oLng) * Math.PI) / 180;
+  const meanLat = (((lat + oLat) / 2) * Math.PI) / 180;
+  return { east: dLng * EARTH_R * Math.cos(meanLat), north: dLat * EARTH_R };
+}
+
+function latLngToTile(lat: number, lng: number, z: number) {
+  const n = Math.pow(2, z);
+  const xt = Math.floor(((lng + 180) / 360) * n);
+  const latRad = (lat * Math.PI) / 180;
+  const yt = Math.floor(((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * n);
+  return { x: xt, y: yt };
 }
 
 function riskColor(risk: number | null): number {
@@ -61,12 +70,25 @@ function riskColor(risk: number | null): number {
   return 0x3d5470;
 }
 
+async function loadGlbTile(z: number, x: number, y: number): Promise<THREE.Group | null> {
+  try {
+    const r = await fetch("/api/atlas/mbis/tiles/" + z + "/" + x + "/" + y, { cache: "force-cache" });
+    if (!r.ok) return null;
+    const buf = await r.arrayBuffer();
+    const loader = new GLTFLoader();
+    return await new Promise<THREE.Group | null>((resolve) => {
+      loader.parse(buf, "", (gltf) => resolve(gltf.scene), () => resolve(null));
+    });
+  } catch {
+    return null;
+  }
+}
+
 export default function WorldScene() {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const rafRef = useRef<number>(0);
   const [snap, setSnap] = useState<Snapshot | null>(null);
 
-  // Fetch snapshot every 5s for live updates
   useEffect(() => {
     let alive = true;
     const tick = async () => {
@@ -75,13 +97,12 @@ export default function WorldScene() {
         if (!r.ok) return;
         const j = await r.json();
         if (alive) setSnap(j);
-      } catch { /* ignore */ }
+      } catch {}
     };
     tick();
     const id = setInterval(tick, 5000);
     return () => { alive = false; clearInterval(id); };
   }, []);
-
   useEffect(() => {
     const mount = mountRef.current;
     if (!mount) return;
@@ -102,7 +123,7 @@ export default function WorldScene() {
     renderer.setSize(w, h);
     mount.appendChild(renderer.domElement);
 
-    scene.add(new THREE.AmbientLight(0x3a5070, 0.5));
+    scene.add(new THREE.AmbientLight(0x3a5070, 0.6));
     const sun = new THREE.DirectionalLight(0x88aacc, 1.4);
     sun.position.set(15, 30, 20);
     scene.add(sun);
@@ -116,120 +137,81 @@ export default function WorldScene() {
     );
     ground.rotation.x = -Math.PI / 2;
     scene.add(ground);
-
     scene.add(new THREE.GridHelper(2000, 80, 0x203050, 0x182840));
 
     const buildings = snap?.data?.buildings ?? [];
     const drones = snap?.data?.drones ?? [];
-
     const buildingGroup = new THREE.Group();
     scene.add(buildingGroup);
 
-    if (buildings.length > 0 && buildings.every(b => b.lat != null && b.lng != null)) {
-      const validBuildings = buildings.filter(b => b.lat != null && b.lng != null) as Array<Building & { lat: number; lng: number }>;
-      const originLat = validBuildings.reduce((a, b) => a + b.lat, 0) / validBuildings.length;
-      const originLng = validBuildings.reduce((a, b) => a + b.lng, 0) / validBuildings.length;
+    let cancelled = false;
 
-      for (const b of validBuildings) {
-        const enu = wgs84ToEnu(b.lat, b.lng, originLat, originLng);
+    (async () => {
+      if (buildings.length === 0 || !buildings.every((b) => b.lat != null && b.lng != null)) {
+        for (const b of PROCEDURAL_FALLBACK) {
+          if (cancelled) return;
+          const m = new THREE.Mesh(
+            new THREE.BoxGeometry(b.w, b.h, b.d),
+            new THREE.MeshPhysicalMaterial({ color: b.c, roughness: 0.35, metalness: 0.4 }),
+          );
+          m.position.set(b.x, b.h / 2, b.z);
+          buildingGroup.add(m);
+        }
+        return;
+      }
+      const valid = buildings.filter((b) => b.lat != null && b.lng != null) as Array<Building & { lat: number; lng: number }>;
+      const oLat = valid.reduce((a, b) => a + b.lat, 0) / valid.length;
+      const oLng = valid.reduce((a, b) => a + b.lng, 0) / valid.length;
+      const placeholders = new Map<string, THREE.Mesh>();
+      for (const b of valid) {
+        const enu = wgs84ToEnu(b.lat, b.lng, oLat, oLng);
         const height = b.height_m ?? (b.floor_count ? b.floor_count * 3.5 : 40);
         const width = b.floor_count ? Math.max(8, b.floor_count * 0.5) : 12;
-        const depth = width * 0.8;
         const mesh = new THREE.Mesh(
-          new THREE.BoxGeometry(width, height, depth),
-          new THREE.MeshPhysicalMaterial({ color: riskColor(b.risk_score), roughness: 0.35, metalness: 0.4 }),
+          new THREE.BoxGeometry(width, height, width * 0.8),
+          new THREE.MeshPhysicalMaterial({ color: riskColor(b.risk_score), roughness: 0.35, metalness: 0.4, transparent: true, opacity: 0.85 }),
         );
         mesh.position.set(enu.east, height / 2, -enu.north);
-        mesh.userData = { id: b.id, name: b.name };
+        mesh.userData = { id: b.id, mbis_id: b.mbis_id, isFallback: true };
         buildingGroup.add(mesh);
+        placeholders.set(b.id, mesh);
       }
-
-      // Auto-fit camera to building bounds
-      const box = new THREE.Box3().setFromObject(buildingGroup);
-      const size = box.getSize(new THREE.Vector3());
-      const maxDim = Math.max(size.x, size.y, size.z);
+      const bbox = new THREE.Box3().setFromObject(buildingGroup);
+      const size = bbox.getSize(new THREE.Vector3());
+      const maxDim = Math.max(size.x, size.y, size.z) || 200;
       const dist = maxDim * 1.4;
       camera.position.set(dist * 0.6, dist * 0.7, dist * 0.9);
       camera.lookAt(0, size.y / 2, 0);
 
-      // Drone markers at home positions
       for (const d of drones) {
-        if (d.home_lat == null || d.home_lng == null) continue;
-        const enu = wgs84ToEnu(d.home_lat, d.home_lng, originLat, originLng);
-        const droneMesh = new THREE.Group();
+        if (cancelled || d.home_lat == null || d.home_lng == null) continue;
+        const enu = wgs84ToEnu(d.home_lat, d.home_lng, oLat, oLng);
+        const drone = new THREE.Group();
         const body = new THREE.Mesh(
           new THREE.BoxGeometry(2, 0.5, 2),
           new THREE.MeshPhysicalMaterial({ color: 0xd0dce8, roughness: 0.2, metalness: 0.7 }),
         );
-        droneMesh.add(body);
-        for (const [x, z] of [[-1, -1], [1, -1], [1, 1], [-1, 1]] as const) {
-          const arm = new THREE.Mesh(
-            new THREE.BoxGeometry(1.5, 0.2, 0.2),
-            new THREE.MeshPhysicalMaterial({ color: 0x8899aa, roughness: 0.4, metalness: 0.5 }),
-          );
-          arm.position.set(x, 0, z);
-          arm.rotation.y = Math.atan2(z, x);
-          droneMesh.add(arm);
-        }
-        droneMesh.position.set(enu.east, 15, -enu.north);
-        droneMesh.userData = { id: d.id, name: d.name };
-        scene.add(droneMesh);
+        drone.add(body);
+        drone.position.set(enu.east, 15, -enu.north);
+        scene.add(drone);
       }
-    } else {
-      // Procedural fallback (snapshot empty or no coords)
-      for (const b of PROCEDURAL_FALLBACK) {
-        const m = new THREE.Mesh(
-          new THREE.BoxGeometry(b.w, b.h, b.d),
-          new THREE.MeshPhysicalMaterial({ color: b.c, roughness: 
-0.35, metalness: 0.4 }),
-        );
-        m.position.set(b.x, b.h / 2, b.z);
-        scene.add(m);
-      }
-      // Hovering drone over Tower-C
-      const drone = new THREE.Group();
-      const body = new THREE.Mesh(
-        new THREE.BoxGeometry(1.2, 0.28, 1.2),
-        new THREE.MeshPhysicalMaterial({ color: 0xd0dce8, roughness: 0.2, metalness: 0.7 }),
-      );
-      drone.add(body);
-      for (const [x, z] of [[-1, -1], [1, -1], [1, 1], [-1, 1]] as const) {
-        const arm = new THREE.Mesh(
-          new THREE.BoxGeometry(0.85, 0.1, 0.1),
-          new THREE.MeshPhysicalMaterial({ color: 0x8899aa, roughness: 0.4, metalness: 0.5 }),
-        );
-        arm.position.set(x / 2, 0, z / 2);
-        arm.rotation.y = Math.atan2(z, x);
-        drone.add(arm);
-      }
-      drone.position.set(0, 18, 0);
-      scene.add(drone);
-    }
 
-    // Anomaly spheres (from occupancy grid hotspots — kept simple for now)
-    const anomalies = [
-      { x: 2, y: 12, z: 4.5, c: 0xb91c1c },
-      { x: -1, y: 8, z: 4.5, c: 0xb45309 },
-    ];
-    for (const a of anomalies) {
-      const m = new THREE.Mesh(
-        new THREE.SphereGeometry(0.5, 12, 12),
-        new THREE.MeshBasicMaterial({ color: a.c }),
-      );
-      m.position.set(a.x, a.y, a.z);
-      scene.add(m);
-    }
+      for (const b of valid) {
+        if (cancelled || !b.mbis_id) continue;
+        const t = latLngToTile(b.lat, b.lng, MBIS_ZOOM);
+        const glb = await loadGlbTile(MBIS_ZOOM, t.x, t.y);
+        if (cancelled) return;
+        if (glb) {
+          const enu = wgs84ToEnu(b.lat, b.lng, oLat, oLng);
+          glb.position.set(enu.east, 0, -enu.north);
+          scene.add(glb);
+          const ph = placeholders.get(b.id);
+          if (ph) ph.visible = false;
+        }
+      }
+    })();
 
     const loop = () => {
-      const t = Date.now() * 0.001;
-      // Subtle camera orbit for visual life
-      const radius = camera.position.length();
-      const baseY = camera.position.y;
-      const angle = t * 0.05;
-      camera.position.x = Math.cos(angle) * radius * 0.3 + camera.position.x * 0.7;
-      camera.position.z = Math.sin(angle) * radius * 0.3 + camera.position.z * 0.7;
-      camera.position.y = baseY;
-      camera.lookAt(0, 30, 0);
       renderer.render(scene, camera);
       rafRef.current = requestAnimationFrame(loop);
     };
@@ -245,6 +227,7 @@ export default function WorldScene() {
     ro.observe(mount);
 
     return () => {
+      cancelled = true;
       cancelAnimationFrame(rafRef.current);
       ro.disconnect();
       renderer.dispose();
@@ -252,14 +235,5 @@ export default function WorldScene() {
     };
   }, [snap]);
 
-  return (
-    <div
-      ref={mountRef}
-      style={{
-        position: "absolute",
-        inset: 0,
-        background: "#060f1e",
-      }}
-    />
-  );
+  return <div ref={mountRef} style={{ position: "absolute", inset: 0, background: "#060f1e" }} />;
 }
