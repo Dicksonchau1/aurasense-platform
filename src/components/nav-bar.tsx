@@ -226,11 +226,12 @@ export function NavBar() {
   }
 
   const NAV = [
-    { href: '/',         label: 'Home'     },
-    { href: '/drone',    label: 'Drone'    },
-    { href: '/rehearse', label: 'Rehearse' },
-    { href: '/facility', label: 'Facility', soon: true },
-    { href: '/portal',   label: 'Portal',   soon: true },
+    { href: '/',          label: 'Home'     },
+    { href: '/dashboard', label: 'ATLAS'    },
+    { href: '/drone',     label: 'Drone'    },
+    { href: '/rehearse',  label: 'Rehearse' },
+    { href: '/facility',  label: 'Facility', soon: true },
+    { href: '/portal',    label: 'Portal',   soon: true },
   ]
 
   return (
