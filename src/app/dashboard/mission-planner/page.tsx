@@ -1,115 +1,70 @@
-"use client";
+﻿"use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import MissionCanvas, {
-  type MissionStats,
-} from "./_components/MissionCanvas";
+import { MissionProvider } from "@/lib/mission/context";
+import Topbar from "./_components/Topbar";
+import Modebar from "./_components/Modebar";
+import Hud from "./_components/Hud";
+import Toast from "./_components/Toast";
+import Viewport3D from "./_components/Viewport3D";
+import RightPanel from "./_components/RightPanel";
 
 export default function MissionPlannerPage() {
-  const [stats, setStats] = useState<MissionStats>({
-    count: 0,
-    distance: 0,
-    duration: 0,
-    battery: 100,
-  });
-  const [sim, setSim] = useState(false);
-
   return (
-    <main style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <header>
-        <div style={{ fontSize: 12, opacity: 0.6, marginBottom: 4 }}>
-          <Link href="/dashboard" style={{ color: "#22d3ee", textDecoration: "none" }}>
-            Dashboard
-          </Link>
-          <span style={{ margin: "0 8px", opacity: 0.4 }}>/</span>
+    <MissionProvider>
+      <main style={{ display: "flex", flexDirection: "column", gap: 10, height: "calc(100vh - 140px)", minHeight: 0 }}>
+        {/* Breadcrumb */}
+        <div style={{ fontSize: 12, color: "#8b9aae" }}>
+          <Link href="/dashboard" style={{ color: "#5ab8d0", textDecoration: "none" }}>Dashboard</Link>
+          <span style={{ margin: "0 8px", opacity: 0.5 }}>/</span>
           <span>Mission Planner</span>
         </div>
-        <h1 style={{ fontSize: 22, margin: 0 }}>Mission Planner</h1>
-        <p style={{ opacity: 0.6, margin: "4px 0 0", fontSize: 13 }}>
-          Click the map to drop waypoints. Switch modes to move or delete. Simulate to
-          preview the flight path with a glow trail.
-        </p>
-      </header>
 
-      <section
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-          gap: 12,
-        }}
-      >
-        <StatCard label="Waypoints"  value={`${stats.count}`} />
-        <StatCard label="Distance"   value={`${stats.distance.toFixed(0)} m`} />
-        <StatCard label="Duration"   value={`${stats.duration.toFixed(0)} s`} />
-        <StatCard
-          label="Battery left"
-          value={`${stats.battery.toFixed(0)}%`}
-          color={
-            stats.battery < 25 ? "#ef4444" : stats.battery < 50 ? "#f59e0b" : "#22c55e"
-          }
-        />
-      </section>
+        {/* Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <h1 style={{ fontSize: 22, margin: 0, color: "#e0e8f2" }}>Mission Planner</h1>
+          <span style={{ padding: "3px 10px", borderRadius: 999, fontSize: 11, fontWeight: 600, background: "rgba(46,125,82,.14)", color: "#6ee7a4", border: "1px solid rgba(46,125,82,.3)" }}>
+            DRAFT
+          </span>
+        </div>
 
-      <section
-        style={{
-          padding: 12,
-          border: "1px solid #1a1f26",
-          borderRadius: 8,
-          background: "#0e1217",
-        }}
-      >
-        <MissionCanvas onStatsChange={setStats} onSim={setSim} />
-      </section>
+        {/* Topbar - mission action strip (Undo/Clear/Optimise/Simulate/Deploy) */}
+        <Topbar />
 
-      {sim && (
+        {/* Workbench: viewport + right panel */}
         <div
           style={{
-            padding: "8px 12px",
-            borderRadius: 6,
-            background: "#0e1c25",
-            border: "1px solid #22d3ee",
-            fontSize: 12,
-            color: "#22d3ee",
+            display: "grid",
+            gridTemplateColumns: "1fr 320px",
+            gap: 10,
+            flex: 1,
+            minHeight: 0,
           }}
         >
-          Simulating flight path…
-        </div>
-      )}
-    </main>
-  );
-}
+          {/* Viewport with overlays */}
+          <div
+            style={{
+              position: "relative",
+              border: "1px solid #1a1f26",
+              borderRadius: 12,
+              overflow: "hidden",
+              background: "#050e1a",
+              minWidth: 0,
+              minHeight: 0,
+            }}
+          >
+            <Viewport3D />
+            <Hud />
+            <Modebar />
+          </div>
 
-function StatCard({
-  label,
-  value,
-  color,
-}: {
-  label: string;
-  value: string;
-  color?: string;
-}) {
-  return (
-    <div
-      style={{
-        padding: 12,
-        border: "1px solid #1a1f26",
-        borderRadius: 8,
-        background: "#0e1217",
-      }}
-    >
-      <div style={{ fontSize: 11, opacity: 0.6 }}>{label}</div>
-      <div
-        style={{
-          fontSize: 22,
-          fontWeight: 700,
-          marginTop: 4,
-          color: color ?? "#e7ecf3",
-          fontFamily: "ui-monospace, Menlo, monospace",
-        }}
-      >
-        {value}
-      </div>
-    </div>
+          {/* Right panel - 5 tabs */}
+          <RightPanel />
+        </div>
+
+        {/* Toast layer */}
+        <Toast />
+      </main>
+    </MissionProvider>
   );
 }
