@@ -32,6 +32,7 @@
         "@types/react": "latest",
         "@types/react-dom": "latest",
         "@types/testing-library__react": "latest",
+        "@vitest/ui": "^4.1.7",
         "autoprefixer": "latest",
         "eslint": "^9.39.4",
         "eslint-config-next": "latest",
