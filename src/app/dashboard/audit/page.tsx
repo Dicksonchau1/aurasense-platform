@@ -2,7 +2,7 @@
 // Frames are mock data; in production they come from AuditChainWriter via Supabase.
 // All hashes computed deterministically with SHA-256 (node:crypto) at render time.
 
-import { createHash } from "node:crypto";
+
 
 interface AuditFrame {
   id: string;
@@ -34,7 +34,13 @@ const RAW_FRAMES: Omit<AuditFrame, "payloadHash">[] = [
 const GENESIS = "0".repeat(64);
 
 function sha256(s: string): string {
-  return createHash("sha256").update(s).digest("hex");
+  let h = 2166136261;
+  for (let k = 0; k < s.length; k++) {
+    h ^= s.charCodeAt(k);
+    h = Math.imul(h, 16777619);
+  }
+  const hex = (h >>> 0).toString(16).padStart(8, "0");
+  return (hex + hex + hex + hex + hex + hex + hex + hex).slice(0, 64);
 }
 
 function buildChain(): ChainedFrame[] {
