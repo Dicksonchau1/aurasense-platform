@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
-import { subscribe } from '../../../../../lib/runtime/anomaly-bus'
-import { ingestAnomalyEvent, getAllTracks } from '../../../../../lib/atlas/threat-store'
+import { subscribe } from '@/lib/runtime/anomaly-bus'
+import { ingestAnomalyEvent, getAllTracks } from '@/lib/atlas/threat-store'
 
 export const dynamic = 'force-dynamic'
 

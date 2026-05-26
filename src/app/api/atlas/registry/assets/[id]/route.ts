@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getAllAssets, updateAsset, revokeAsset } from '../../../../../lib/atlas/registry-store'
+import { getAllAssets, updateAsset, revokeAsset } from '@/lib/atlas/registry-store'
 
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
   const id = params.id

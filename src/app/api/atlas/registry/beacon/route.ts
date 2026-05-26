@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { enrollBeaconAssets } from '../../../../lib/atlas/registry-store'
+import { enrollBeaconAssets } from '@/lib/atlas/registry-store'
 
 export async function POST(req: Request) {
   const json = await req.json()

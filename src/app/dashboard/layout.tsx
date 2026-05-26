@@ -1,18 +1,72 @@
-import "./atlas-os.css";
-import Link from "next/link";
-import type { ReactNode } from "react";
+﻿"use client";
 
-export default function DashboardLayout({ children }: { children: ReactNode }) {
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import "./atlas-os.css";
+
+interface NavItem {
+  href: string;
+  label: string;
+}
+interface NavSection {
+  title: string;
+  items: NavItem[];
+}
+
+const NAV: NavSection[] = [
+  {
+    title: "Operations",
+    items: [{ href: "/dashboard", label: "Operational Dashboard" }],
+  },
+  {
+    title: "Drone",
+    items: [
+      { href: "/dashboard/drone-specs", label: "Drone Specs" },
+      { href: "/dashboard/robot-specs", label: "Robot Specs" },
+    ],
+  },
+  {
+    title: "World",
+    items: [{ href: "/dashboard/world-model", label: "World Model" }],
+  },
+  {
+    title: "Intelligence",
+    items: [{ href: "/dashboard/skills", label: "Skills Library" }],
+  },
+  {
+    title: "Mission",
+    items: [{ href: "/dashboard/mission-planner", label: "Mission Planner" }],
+  },
+  {
+    title: "Governance",
+    items: [
+      { href: "/dashboard/audit", label: "Audit" },
+      { href: "/dashboard/compliance", label: "Compliance" },
+    ],
+  },
+  {
+    title: "Account",
+    items: [
+      { href: "/dashboard/billing", label: "Billing Plans" },
+      { href: "/dashboard/settings", label: "Settings" },
+    ],
+  },
+];
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+
   return (
     <div className="atlas-os">
       <div className="atlas-shell">
+        {/* Topbar */}
         <header className="atlas-topbar">
           <div className="atlas-logo">AT</div>
           <div className="atlas-brand">
             <span className="atlas-brand-name">ATLAS OS</span>
             <span className="atlas-brand-sub">AuraSense</span>
           </div>
-          <span className="atlas-shell-badge">v12</span>
+          <span className="atlas-shell-badge">v11</span>
           <div className="atlas-divider" />
           <div className="atlas-tb-right">
             <div className="atlas-fit-pill">
@@ -20,49 +74,44 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               <span className="v">87</span>
               <span style={{ opacity: 0.6 }}>/100</span>
             </div>
-            <Link href="/login" className="atlas-tb-icon">A</Link>
+            <Link href="/login" className="atlas-tb-icon" title="Account">A</Link>
           </div>
         </header>
 
+        {/* Body: Sidebar + Main */}
         <div className="atlas-body">
           <aside className="atlas-sidebar">
-            <div className="atlas-ns">Operations</div>
-            <Link href="/dashboard" className="atlas-nb"><span className="atlas-nb-ico">#</span> Overview</Link>
-            <Link href="/dashboard/mission-planner" className="atlas-nb"><span className="atlas-nb-ico">M</span> Mission Planner</Link>
-            <Link href="/dashboard/world-model" className="atlas-nb"><span className="atlas-nb-ico">W</span> World Model</Link>
-            <Link href="/dashboard/fleet" className="atlas-nb"><span className="atlas-nb-ico">F</span> Fleet</Link>
-            <Link href="/dashboard/learning-loop" className="atlas-nb"><span className="atlas-nb-ico">L</span> Learning Loop</Link>
-            <Link href="/dashboard/compliance" className="atlas-nb"><span className="atlas-nb-ico">K</span> Compliance</Link>
-
-            <div className="atlas-ns">Platform</div>
-            <Link href="/atlas/nepa" className="atlas-nb"><span className="atlas-nb-ico">N</span> NEPA</Link>
-            <Link href="/atlas/registry" className="atlas-nb"><span className="atlas-nb-ico">R</span> Registry</Link>
-            <Link href="/atlas/threat" className="atlas-nb"><span className="atlas-nb-ico">T</span> Threat</Link>
-            <Link href="/atlas/evidence" className="atlas-nb"><span className="atlas-nb-ico">E</span> Evidence</Link>
-            <Link href="/rehearse/drone" className="atlas-nb"><span className="atlas-nb-ico">H</span> Rehearse</Link>
-
-            <div className="atlas-ns">Commerce</div>
-            <Link href="/portal" className="atlas-nb"><span className="atlas-nb-ico">P</span> Customer Portal</Link>
-            <Link href="/pricing" className="atlas-nb"><span className="atlas-nb-ico">$</span> Pricing</Link>
-            <Link href="/internal/account-manager" className="atlas-nb"><span className="atlas-nb-ico">C</span> Account Manager</Link>
+            {NAV.map((section) => (
+              <div key={section.title}>
+                <div className="atlas-ns">{section.title}</div>
+                {section.items.map((item) => {
+                  const active =
+                    item.href === "/dashboard"
+                      ? pathname === "/dashboard"
+                      : pathname.startsWith(item.href);
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={"atlas-nb" + (active ? " active" : "")}
+                    >
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            ))}
           </aside>
 
-          <section className="atlas-main">
-            <div className="atlas-viewport">{children}</div>
-          </section>
+          {/* Viewport */}
+          <main className="atlas-viewport">{children}</main>
         </div>
 
+        {/* Status Bar */}
         <footer className="atlas-statusbar">
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <span className="atlas-sdot" style={{ background: "#22c55e" }} />
-            <span>4 drones active</span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <span className="atlas-sdot" style={{ background: "#0891b2" }} />
-            <span>NEPA STDP v3.2</span>
-          </div>
-          <span>Kowloon / HKCAD-B</span>
-          <span className="atlas-sb-fit">ATLAS Fit <strong>87</strong>/100</span>
+          <span className="atlas-st-item"><span className="atlas-dot ok" /> LINK OK</span>
+          <span className="atlas-st-item"><span className="atlas-dot ok" /> NEPA online</span>
+          <span className="atlas-st-item" style={{ marginLeft: "auto" }}>ATLAS Fit 87/100</span>
         </footer>
       </div>
     </div>

@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { getAllTracks, evaluateEngagementPolicy, issueEngagementAuthority } from '../../../../../lib/atlas/threat-store'
-import { mintEdgeToken } from '../../../../../lib/hmac'
-import { appendAudit } from '../../../../../lib/audit-chain'
-import { envelope } from '../../../../../lib/nepa'
+import { getAllTracks, evaluateEngagementPolicy, issueEngagementAuthority } from '@/lib/atlas/threat-store'
+import { mintEdgeToken } from '@/lib/hmac'
+import { appendAudit } from '@/lib/audit-chain'
+import { envelope } from '@/lib/nepa'
 
 const bodySchema = z.object({
   track_id: z.string(),

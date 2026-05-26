@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { envelope } from '../../../../lib/nepa'
-import { getAllAssets, enrollAsset } from '../../../../lib/atlas/registry-store'
+import { envelope } from '@/lib/nepa'
+import { getAllAssets, enrollAsset } from '@/lib/atlas/registry-store'
 
 const assetSchema = z.object({
   oem: z.string(),

@@ -1,6 +1,6 @@
-// src/lib/audit/AuditChainWriter.ts
-// Hash-chained audit log writer — satisfies IAuditChainWriter from PolygonEngineOrchestrator.
-// PR D-2 (2026-05-23) — Step 2 of post-Lock-#4 implementation wave.
+﻿// src/lib/audit/AuditChainWriter.ts
+// Hash-chained audit log writer â€” satisfies IAuditChainWriter from PolygonEngineOrchestrator.
+// PR D-2 (2026-05-23) â€” Step 2 of post-Lock-#4 implementation wave.
 
 import { createHash, randomUUID } from 'crypto';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
@@ -155,29 +155,5 @@ export class AuditChainWriter implements IAuditChainWriter {
       throw new Error(`AuditChainWriter.fetchChainTip failed: ${error.message}`);
     }
     return (data?.tip_chain_hash as string | undefined) ?? GENESIS_CHAIN_HASH;
-  }
-}
-      } else {
-        throw e;
-      }
-    }
-    // 6. Return CapturedFrame
-    return {
-      ...row,
-      captured_at: new Date().toISOString(),
-      created_at: new Date().toISOString()
-    };
-  }
-
-  private async getChainTip(deployment_id: string, run_id: string): Promise<string | null> {
-    const { data, error } = await this.supabase
-      .from('audit_chain_tips')
-      .select('chain_hash')
-      .eq('deployment_id', deployment_id)
-      .eq('run_id', run_id)
-      .order('tick', { ascending: false })
-      .limit(1);
-    if (error || !data || data.length === 0) return null;
-    return data[0].chain_hash;
   }
 }

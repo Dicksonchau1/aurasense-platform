@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { droneContextToSessionContext, droneTelemetryToFrame, DroneInspectionContext } from '../../../../lib/rehearse/domains/drone-inspection';
-import { orchestratorSessionHandler } from '../../../../lib/rehearse/orchestrator';
-import { requireAuth } from '../../../../lib/auth';
+import { droneContextToSessionContext, droneTelemetryToFrame, DroneInspectionContext } from '@/lib/rehearse/domains/drone-inspection';
+import { orchestratorSessionHandler } from '@/lib/rehearse/orchestrator';
+import { requireAuth } from '@/lib/auth';
 
 export async function POST(req: NextRequest) {
   await requireAuth(req);

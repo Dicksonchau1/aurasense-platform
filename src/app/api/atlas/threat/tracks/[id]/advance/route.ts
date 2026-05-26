@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { getAllTracks, advanceThreatState } from '../../../../../../../lib/atlas/threat-store'
+import { getAllTracks, advanceThreatState } from '@/lib/atlas/threat-store'
 
 const bodySchema = z.object({
   to: z.string(),
