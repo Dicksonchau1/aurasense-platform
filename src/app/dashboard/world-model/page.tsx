@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { Card } from "../_components/SpecCard";
@@ -39,7 +39,7 @@ export default function WorldModelPage() {
           gridTemplateColumns: "1fr 300px",
           gap: 10,
           flex: 1,
-          minHeight: 0,
+          minHeight: 500,
         }}
       >
         {/* 3D viewport with HUD overlays */}
@@ -129,4 +129,3 @@ const btnG: React.CSSProperties = {
   background: "rgba(255,255,255,.06)",
   color: "#cfd8e3",
 };
-
