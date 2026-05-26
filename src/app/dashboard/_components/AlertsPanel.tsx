@@ -1,66 +1,68 @@
-﻿"use client";
+"use client";
 
-import { Card, Badge } from "./SpecCard";
-import { ALERTS, type AlertSeverity } from "@/lib/mock/ops";
+import React from "react";
+import { useAlerts } from "@/lib/hooks/useAtlasOps";
+import type { AlertItem } from "@/lib/types/atlas";
 
-const SEV_COLOR: Record<AlertSeverity, { dot: string; bg: string; bd: string; pill: "danger" | "warn" | "info" }> = {
-  danger: { dot: "#ef4444", bg: "rgba(185,28,28,.07)", bd: "rgba(185,28,28,.3)",  pill: "danger" },
-  warn:   { dot: "#f59e0b", bg: "rgba(180,83,9,.07)",  bd: "rgba(180,83,9,.3)",   pill: "warn"   },
-  info:   { dot: "#5ab8d0", bg: "rgba(79,152,163,.07)", bd: "rgba(79,152,163,.3)", pill: "info"   },
+const SEV_COLOR: Record<AlertItem["severity"], string> = {
+  info:   "#3b82f6",
+  warn:   "#f59e0b",
+  danger: "#ef4444",
 };
 
+// TODO: VERIFY props shape — original AlertsPanel may have taken `assets` or other props.
+// If so, restore them and pass through; the hook still drives the data.
 export default function AlertsPanel() {
-  return (
-    <Card title="Active Alerts">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-        <span style={{ fontSize: 11, color: "#8b9aae" }}>
-          {ALERTS.filter((a) => a.sev === "danger").length} critical / {ALERTS.length} total
-        </span>
-        <button style={btnSm}>Acknowledge All</button>
-      </div>
+  const { alerts, isLoading, error } = useAlerts();
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-        {ALERTS.map((a) => {
-          const c = SEV_COLOR[a.sev];
-          return (
-            <div
-              key={a.id}
-              style={{
-                display: "flex",
-                alignItems: "flex-start",
-                gap: 10,
-                padding: "9px 11px",
-                borderRadius: 8,
-                background: c.bg,
-                border: "1px solid " + c.bd,
-              }}
-            >
-              <div style={{ width: 7, height: 7, borderRadius: "50%", background: c.dot, marginTop: 6, flexShrink: 0, boxShadow: "0 0 6px " + c.dot }} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 3 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <span style={{ fontSize: 12.5, fontWeight: 700, color: "#e0e8f2" }}>{a.type}</span>
-                    <span style={{ fontSize: 11, fontFamily: "ui-monospace, monospace", color: "#5ab8d0" }}>{a.drone}</span>
-                  </div>
-                  <Badge kind={c.pill}>{a.sev}</Badge>
-                </div>
-                <div style={{ fontSize: 11.5, color: "#cfd8e3", marginBottom: 4, lineHeight: 1.4 }}>{a.msg}</div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: 9.5, fontFamily: "ui-monospace, monospace", color: "#6b7a8c" }}>
-                    {a.id} - {a.t}
-                  </span>
-                  <div style={{ display: "flex", gap: 4 }}>
-                    <button style={btnSm}>ACK</button>
-                    <button style={btnSm}>Mute</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        })}
+  if (error) {
+    return (
+      <div style={{ padding: 12, color: "#fca5a5", fontSize: 12 }}>
+        Alerts unavailable: {error.message ?? "unknown"}
       </div>
-    </Card>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div style={{ padding: 12, color: "rgba(255,255,255,0.4)", fontSize: 12 }}>
+        Loading alerts…
+      </div>
+    );
+  }
+
+  if (alerts.length === 0) {
+    return (
+      <div style={{ padding: 12, color: "rgba(255,255,255,0.4)", fontSize: 12 }}>
+        No active alerts.
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      {alerts.slice(0, 10).map(a => (
+        <article
+          key={a.id}
+          style={{
+            display: "flex", alignItems: "flex-start", gap: 10,
+            padding: 10, borderRadius: 8,
+            background: "rgba(15,23,42,0.6)",
+            border: `1px solid ${SEV_COLOR[a.severity]}44`,
+          }}
+        >
+          <div style={{
+            width: 8, height: 8, borderRadius: "50%",
+            background: SEV_COLOR[a.severity], flexShrink: 0, marginTop: 4,
+          }} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 12, color: "#e0e8f2" }}>{a.message}</div>
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>
+              {a.source} · {new Date(a.ts).toLocaleTimeString()}
+            </div>
+          </div>
+        </article>
+      ))}
+    </div>
   );
 }
-
-const btnSm: React.CSSProperties = { padding: "3px 9px", borderRadius: 5, fontSize: 10, fontWeight: 600, cursor: "pointer", border: "1px solid #1a1f26", background: "rgba(255,255,255,.05)", color: "#cfd8e3" };

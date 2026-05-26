@@ -1,61 +1,61 @@
-﻿"use client";
+"use client";
 
-import { Card } from "./SpecCard";
-import { ACTIVITY } from "@/lib/mock/ops";
-
-const ICON_COLOR: Record<string, string> = {
-  "[deploy]": "#5ab8d0",
-  "[ack]":    "#22c55e",
-  "[scan]":   "#3b82f6",
-  "[rth]":    "#f59e0b",
-  "[cal]":    "#a78bfa",
-  "[audit]":  "#6ee7a4",
-};
+import React from "react";
+import { useActivity } from "@/lib/hooks/useAtlasOps";
 
 export default function ActivityPanel() {
-  return (
-    <Card title="Activity Feed">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-        <span style={{ fontSize: 11, color: "#8b9aae" }}>Live tail - newest first</span>
-        <button style={btnSm}>View All</button>
-      </div>
+  const { activity, isLoading, error } = useActivity();
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-        {ACTIVITY.map((a, i) => {
-          const color = ICON_COLOR[a.i] ?? "#8b9aae";
-          return (
-            <div
-              key={i}
-              style={{
-                display: "flex",
-                alignItems: "flex-start",
-                gap: 9,
-                padding: "7px 9px",
-                borderRadius: 6,
-                borderBottom: i === ACTIVITY.length - 1 ? "none" : "1px solid rgba(26,31,38,.5)",
-                fontSize: 11.5,
-              }}
-            >
-              <span
-                style={{
-                  fontSize: 10,
-                  fontFamily: "ui-monospace, monospace",
-                  color,
-                  flexShrink: 0,
-                  width: 56,
-                  fontWeight: 700,
-                }}
-              >
-                {a.i}
-              </span>
-              <div style={{ flex: 1, minWidth: 0, color: "#cfd8e3", lineHeight: 1.45 }}>{a.m}</div>
-              <span style={{ fontFamily: "ui-monospace, monospace", fontSize: 9.5, color: "#6b7a8c", flexShrink: 0 }}>{a.t}</span>
-            </div>
-          );
-        })}
+  if (error) {
+    return (
+      <div style={{ padding: 12, color: "#fca5a5", fontSize: 12 }}>
+        Activity unavailable: {error.message ?? "unknown"}
       </div>
-    </Card>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div style={{ padding: 12, color: "rgba(255,255,255,0.4)", fontSize: 12 }}>
+        Loading activity…
+      </div>
+    );
+  }
+
+  if (activity.length === 0) {
+    return (
+      <div style={{ padding: 12, color: "rgba(255,255,255,0.4)", fontSize: 12 }}>
+        No recent activity.
+      </div>
+    );
+  }
+
+  return (
+    <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+      {activity.slice(0, 12).map((a, i) => (
+        
+          style={{
+            padding: 10, borderRadius: 8,
+            background: i % 2 === 0 ? "rgba(15,23,42,0.6)" : "rgba(15,23,42,0.3)",
+            border: "1px solid #1f2937",
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+            <span style={{ fontSize: 12, color: "#e0e8f2" }}>
+              <strong style={{ color: "#22d3ee" }}>{a.actor}</strong> {a.action}
+              {a.target && <span style={{ color: "rgba(255,255,255,0.7)" }}> {a.target}</span>}
+            </span>
+            <span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", flexShrink: 0 }}>
+              {new Date(a.ts).toLocaleTimeString()}
+            </span>
+          </div>
+          {a.audit_hash && (
+            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", fontFamily: "ui-monospace, monospace", marginTop: 4 }}>
+              {a.audit_hash.slice(0, 16)}…
+            </div>
+          )}
+        </li>
+      ))}
+    </ul>
   );
 }
-
-const btnSm: React.CSSProperties = { padding: "3px 9px", borderRadius: 5, fontSize: 10, fontWeight: 600, cursor: "pointer", border: "1px solid #1a1f26", background: "rgba(255,255,255,.05)", color: "#cfd8e3" };
