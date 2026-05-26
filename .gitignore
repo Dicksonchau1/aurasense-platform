@@ -74,3 +74,5 @@ desktop.ini
 
 # Block rogue app/ at root (canonical is src/app/)
 /app/
+.env.local
+.env*.local

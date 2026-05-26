@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const BACKEND_URL = (process.env.NEPA_BACKEND_URL ?? process.env.AURASENSE_NEPA_URL ?? "http://localhost:8000").replace(/\/+$/, "");
+const BACKEND_URL = (process.env.NEPA_BACKEND_URL ?? "http://localhost:8000").replace(/\/+$/, "");
 const FETCH_TIMEOUT_MS = Number(process.env.NEPA_BACKEND_TIMEOUT_MS ?? "5000");
 const SERVICE_TOKEN = process.env.NEPA_BACKEND_TOKEN ?? "";
 
