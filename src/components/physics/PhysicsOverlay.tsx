@@ -148,7 +148,7 @@ export default function PhysicsOverlay() {
   const env = envFromWeather(weather);
 
   return (
-    <div style={{ position: "absolute", top: 80, right: 20, width: 360, maxHeight: "calc(100vh - 120px)", overflowY: "auto", zIndex: 30 }}>
+    <div style={{ width: "100%", maxHeight: "100%", overflowY: "auto" }}>
       <div style={{ marginBottom: 10, padding: "10px 14px", borderRadius: 8, background: "rgba(6,12,24,0.9)", border: "1px solid rgba(34,211,238,0.3)" }}>
         <div style={{ fontSize: 10, color: "rgba(34,211,238,0.8)", textTransform: "uppercase", letterSpacing: 2, marginBottom: 4 }}>Physics Overlay</div>
         <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "monospace", fontSize: 11, color: "rgba(255,255,255,0.75)" }}>

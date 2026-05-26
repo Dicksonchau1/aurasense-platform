@@ -50,8 +50,7 @@ export default function WorldModelPage() {
             border: "1px solid #1a1f26",
             borderRadius: 12,
             overflow: "hidden",
-            background: "#060f1e",
-            minHeight: 0,
+            background: "#060f1e", minHeight: 500, height: 600,
           }}
         >
           <WorldScene />
@@ -87,7 +86,8 @@ export default function WorldModelPage() {
         </div>
 
         {/* Right rail */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 10, overflowY: "auto", minHeight: 0 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, overflowY: "auto", minHeight: 500 }}>
+          <PhysicsOverlay />
           <LayerPanel />
           <BuildingsPanel />
           <AnomaliesPanel />
@@ -96,7 +96,6 @@ export default function WorldModelPage() {
 
       {/* Agent dock (floating) */}
       <AgentDock />
-      <PhysicsOverlay />
     </main>
   );
 }

@@ -63,11 +63,11 @@ function latLngToTile(lat: number, lng: number, z: number) {
 }
 
 function riskColor(risk: number | null): number {
-  if (risk == null) return 0x4a6080;
+  if (risk == null) return 0x4a90e2;
   if (risk > 75) return 0xb91c1c;
   if (risk > 60) return 0xb45309;
-  if (risk > 40) return 0x4a6080;
-  return 0x3d5470;
+  if (risk > 40) return 0x4a90e2;
+  return 0x3d8fff;
 }
 
 async function loadGlbTile(z: number, x: number, y: number): Promise<THREE.Group | null> {
@@ -112,19 +112,19 @@ export default function WorldScene() {
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x060f1e);
-    scene.fog = new THREE.Fog(0x060f1e, 60, 800);
+    scene.fog = new THREE.Fog(0x060f1e, 5000, 25000);
 
-    const camera = new THREE.PerspectiveCamera(54, w / h, 0.1, 5000);
-    camera.position.set(120, 200, 240);
+    const camera = new THREE.PerspectiveCamera(54, w / h, 0.1, 30000);
+    camera.position.set(4000, 4000, 4000);
     camera.lookAt(0, 30, 0);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(w, h);
-    mount.appendChild(renderer.domElement);
+    mount.appendChild(renderer.domElement); console.log("WORLDSCENE mounted, mount size", mount.clientWidth, "x", mount.clientHeight);
 
-    scene.add(new THREE.AmbientLight(0x3a5070, 0.6));
-    const sun = new THREE.DirectionalLight(0x88aacc, 1.4);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.85));
+    const sun = new THREE.DirectionalLight(0xffffff, 2.0);
     sun.position.set(15, 30, 20);
     scene.add(sun);
     const acc = new THREE.PointLight(0x4f98a3, 1.5, 200);
@@ -132,12 +132,12 @@ export default function WorldScene() {
     scene.add(acc);
 
     const ground = new THREE.Mesh(
-      new THREE.PlaneGeometry(4000, 4000),
+      new THREE.PlaneGeometry(16000, 16000),
       new THREE.MeshLambertMaterial({ color: 0x1a2a3a }),
     );
     ground.rotation.x = -Math.PI / 2;
     scene.add(ground);
-    scene.add(new THREE.GridHelper(2000, 80, 0x203050, 0x182840));
+    scene.add(new THREE.GridHelper(8000, 80, 0x203050, 0x182840));
 
     const buildings = snap?.data?.buildings ?? [];
     const drones = snap?.data?.drones ?? [];
@@ -166,22 +166,25 @@ export default function WorldScene() {
       for (const b of valid) {
         const enu = wgs84ToEnu(b.lat, b.lng, oLat, oLng);
         const height = b.height_m ?? (b.floor_count ? b.floor_count * 3.5 : 40);
-        const width = b.floor_count ? Math.max(8, b.floor_count * 0.5) : 12;
+        const width = b.floor_count ? Math.max(40, b.floor_count * 2.5) : 60;
         const mesh = new THREE.Mesh(
-          new THREE.BoxGeometry(width, height, width * 0.8),
-          new THREE.MeshPhysicalMaterial({ color: riskColor(b.risk_score), roughness: 0.35, metalness: 0.4, transparent: true, opacity: 0.85 }),
+          new THREE.BoxGeometry(width, height, width),
+          new THREE.MeshBasicMaterial({ color: riskColor(b.risk_score), transparent: true, opacity: 0.9 }),
         );
         mesh.position.set(enu.east, height / 2, -enu.north);
         mesh.userData = { id: b.id, mbis_id: b.mbis_id, isFallback: true };
         buildingGroup.add(mesh);
         placeholders.set(b.id, mesh);
+        console.log("WORLDSCENE added building", b.name, "at ENU", enu.east.toFixed(0), enu.north.toFixed(0), "height", height);
       }
       const bbox = new THREE.Box3().setFromObject(buildingGroup);
       const size = bbox.getSize(new THREE.Vector3());
+      const center = bbox.getCenter(new THREE.Vector3());
       const maxDim = Math.max(size.x, size.y, size.z) || 200;
-      const dist = maxDim * 1.4;
-      camera.position.set(dist * 0.6, dist * 0.7, dist * 0.9);
-      camera.lookAt(0, size.y / 2, 0);
+      const dist = maxDim * 1.8;
+      camera.position.set(center.x + dist * 0.6, center.y + dist * 0.7, center.z + dist * 0.9);
+      camera.lookAt(center.x, center.y, center.z);
+      console.log("WORLDSCENE camera at", camera.position.x.toFixed(0), camera.position.y.toFixed(0), camera.position.z.toFixed(0));
 
       for (const d of drones) {
         if (cancelled || d.home_lat == null || d.home_lng == null) continue;
