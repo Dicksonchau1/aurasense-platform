@@ -4,7 +4,7 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "dev": "next dev",
+        "dev": "next dev --webpack",
         "build": "next build",
         "start": "next start",
         "lint": "pnpm exec eslint src/",
@@ -55,6 +55,7 @@
         "@types/testing-library__react": "latest",
         "@vitest/ui": "^4.1.7",
         "autoprefixer": "latest",
+        "dotenv": "^17.4.2",
         "eslint": "^9.39.4",
         "eslint-config-next": "latest",
         "jest": "latest",
