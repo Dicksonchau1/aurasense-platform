@@ -1,58 +1,22 @@
 'use client'
-import { useMemo, useState } from 'react'
+
+import { useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { tierForEmail, tierLabel, type Tier } from '@/lib/auth/domain-router'
-import { Mail, Globe, Stethoscope, Plane, Sparkles } from 'lucide-react'
-"use client";
-
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
-import Card from "@/components/shell/Card";
-import Field from "@/components/shell/Field";
-import Button from "@/components/shell/Button";
-
-const TIER_HINTS: Record<Tier, { label: string; lede: string; icon: React.ElementType; accent: string }> = {
-  free: {
-    label: 'Free Demo',
-    lede: 'You will land on the public playground — 3 sessions/day, watermarked.',
-    icon: Sparkles,
-    accent: '#22d3ee',
-  },
-  nursing: {
-    label: 'Healthcare / Education',
-    lede: 'You will land on Aura-Rehearse-Nurse with the full WHO + clinical scenario suite.',
-    icon: Stethoscope,
-    accent: '#10b981',
-  },
-  enterprise: {
-    label: 'Enterprise / Government',
-    lede: 'You will land on Aura-Fleet — mission planner, Atlas inspection twin, signed audit chain.',
-    icon: Plane,
-    accent: '#a78bfa',
-  },
-}
+import { Mail, Lock, AlertCircle } from 'lucide-react'
 
 export default function LoginPage() {
-  const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
 
-  // Live preview of which tier this email will resolve to. Pure client-side
-  // inference — the real assignment happens in /auth/callback after sign-in.
-  const previewTier = useMemo<Tier | null>(() => {
-    if (!email.includes('@') || email.length < 5) return null
-    return tierForEmail(email)
-  }, [email])
-
-  const hint = previewTier ? TIER_HINTS[previewTier] : null
-  const HintIcon = hint?.icon
-
-  async function sendMagicLink(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
+<<<<<<< Updated upstream
     setLoading(true); setError('')
     const sb = createClient()
     const { error: err } = await sb.auth.signInWithOtp({
@@ -206,3 +170,148 @@ export default function LoginPage() {
     </div>
   )
 }
+=======
+    setErr(null)
+    setLoading(true)
+    try {
+      const supabase = createClient()
+      const { error } = await supabase.auth.signInWithPassword({ email, password })
+      if (error) throw error
+      router.push(searchParams.get('redirect') ?? '/')
+      router.refresh()
+    } catch (e: any) {
+      setErr(e?.message ?? 'Sign in failed')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <main
+      style={{
+        minHeight: '100vh',
+        display: 'grid',
+        placeItems: 'center',
+        background: 'linear-gradient(180deg, #0a0a0a 0%, #111827 100%)',
+        padding: 24,
+      }}
+    >
+      <div
+        style={{
+          width: '100%',
+          maxWidth: 420,
+          background: 'rgba(17,24,39,0.92)',
+          border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: 16,
+          padding: 24,
+          boxShadow: '0 24px 80px rgba(0,0,0,0.45)',
+        }}
+      >
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ fontSize: 28, fontWeight: 700, color: '#fff', marginBottom: 8 }}>Sign in</div>
+          <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>
+            Access AuraSense platform services.
+          </p>
+        </div>
+
+        <form onSubmit={onSubmit} style={{ display: 'grid', gap: 14 }}>
+          <label style={{ display: 'grid', gap: 8 }}>
+            <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)' }}>Email</span>
+            <div style={{ position: 'relative' }}>
+              <Mail
+                className="w-4 h-4"
+                style={{ position: 'absolute', left: 12, top: 12, color: 'rgba(255,255,255,0.45)' }}
+              />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                placeholder="you@company.com"
+                style={{
+                  width: '100%',
+                  padding: '10px 12px 10px 36px',
+                  borderRadius: 10,
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  background: 'rgba(255,255,255,0.04)',
+                  color: '#fff',
+                  outline: 'none',
+                }}
+              />
+            </div>
+          </label>
+
+          <label style={{ display: 'grid', gap: 8 }}>
+            <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)' }}>Password</span>
+            <div style={{ position: 'relative' }}>
+              <Lock
+                className="w-4 h-4"
+                style={{ position: 'absolute', left: 12, top: 12, color: 'rgba(255,255,255,0.45)' }}
+              />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                placeholder="Enter your password"
+                style={{
+                  width: '100%',
+                  padding: '10px 12px 10px 36px',
+                  borderRadius: 10,
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  background: 'rgba(255,255,255,0.04)',
+                  color: '#fff',
+                  outline: 'none',
+                }}
+              />
+            </div>
+          </label>
+
+          {err ? (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '10px 12px',
+                borderRadius: 10,
+                background: 'rgba(239,68,68,0.12)',
+                border: '1px solid rgba(239,68,68,0.35)',
+                color: '#fecaca',
+                fontSize: 13,
+              }}
+            >
+              <AlertCircle className="w-4 h-4" />
+              <span>{err}</span>
+            </div>
+          ) : null}
+
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              width: '100%',
+              padding: '11px 12px',
+              borderRadius: 10,
+              fontSize: 14,
+              fontWeight: 700,
+              background: loading ? '#1f2937' : '#10b981',
+              border: '1px solid rgba(16,185,129,0.45)',
+              color: '#04130f',
+              cursor: loading ? 'not-allowed' : 'pointer',
+            }}
+          >
+            {loading ? 'Signing in...' : 'Sign in'}
+          </button>
+        </form>
+
+        <div style={{ marginTop: 16, textAlign: 'center' }}>
+          <Link href="/" style={{ color: 'rgba(255,255,255,0.65)', fontSize: 13, textDecoration: 'underline' }}>
+            Back to home
+          </Link>
+        </div>
+      </div>
+    </main>
+  )
+}
+>>>>>>> Stashed changes
