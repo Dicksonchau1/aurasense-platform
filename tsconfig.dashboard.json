@@ -1,0 +1,21 @@
+﻿{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": [
+    "src/lib/world/**/*",
+    "src/lib/agents/**/*",
+    "src/lib/rehearsal/**/*",
+    "src/lib/mock/**/*",
+    "src/app/dashboard/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    ".next",
+    "dist",
+    "out",
+    "src/app/dashboard/EliteDashboard.tsx",
+    "src/app/dashboard/**/EliteDashboard.tsx"
+  ]
+}
