@@ -1,42 +1,42 @@
 {
-  "name": "atlas-frontend",
-  "version": "0.1.0",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "pnpm exec eslint app/ components/ hooks/ lib/ src/",
-    "test": "echo 'No tests defined. Add your test runner (e.g. jest, vitest) and update this script.' && exit 0"
-  },
-  "dependencies": {
-    "@tanstack/react-query": "^5.100.10",
-    "lucide-react": "^1.16.0",
-    "next": "latest",
-    "next-auth": "^4.24.14",
-    "react": "latest",
-    "react-dom": "latest",
-    "swr": "^2.4.1"
-  },
-  "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "@tailwindcss/postcss": "^4.3.0",
-    "@testing-library/jest-dom": "latest",
-    "@testing-library/react": "latest",
-    "@types/jest": "latest",
-    "@types/node": "latest",
-    "@types/react": "latest",
-    "@types/react-dom": "latest",
-    "@types/testing-library__react": "latest",
-    "autoprefixer": "latest",
-    "eslint": "^9.39.4",
-    "eslint-config-next": "latest",
-    "jest": "latest",
-    "jsdom": "^29.1.1",
-    "postcss": "latest",
-    "tailwindcss": "latest",
-    "typescript": "latest",
-    "vitest": "^4.1.6"
-  }
+    "name":  "atlas-frontend",
+    "version":  "0.1.0",
+    "private":  true,
+    "type":  "module",
+    "scripts":  {
+                    "dev":  "next dev",
+                    "build":  "next build",
+                    "start":  "next start",
+                    "lint":  "pnpm exec eslint src/",
+                    "test":  "echo \u0027No tests defined. Add your test runner (e.g. jest, vitest) and update this script.\u0027 \u0026\u0026 exit 0"
+                },
+    "dependencies":  {
+                         "@tanstack/react-query":  "^5.100.10",
+                         "lucide-react":  "^1.16.0",
+                         "next":  "latest",
+                         "next-auth":  "^4.24.14",
+                         "react":  "latest",
+                         "react-dom":  "latest",
+                         "swr":  "^2.4.1"
+                     },
+    "devDependencies":  {
+                            "@eslint/js":  "^10.0.1",
+                            "@tailwindcss/postcss":  "^4.3.0",
+                            "@testing-library/jest-dom":  "latest",
+                            "@testing-library/react":  "latest",
+                            "@types/jest":  "latest",
+                            "@types/node":  "latest",
+                            "@types/react":  "latest",
+                            "@types/react-dom":  "latest",
+                            "@types/testing-library__react":  "latest",
+                            "autoprefixer":  "latest",
+                            "eslint":  "^9.39.4",
+                            "eslint-config-next":  "latest",
+                            "jest":  "latest",
+                            "jsdom":  "^29.1.1",
+                            "postcss":  "latest",
+                            "tailwindcss":  "latest",
+                            "typescript":  "latest",
+                            "vitest":  "^4.1.6"
+                        }
 }

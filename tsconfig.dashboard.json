@@ -1,21 +1,18 @@
-﻿{
+{
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "noEmit": true
   },
   "include": [
-    "src/lib/world/**/*",
-    "src/lib/agents/**/*",
-    "src/lib/rehearsal/**/*",
-    "src/lib/mock/**/*",
-    "src/app/dashboard/**/*"
+    "src/app/dashboard/**/*",
+    "src/components/dashboard/**/*",
+    "src/hooks/useAtlasNav.ts",
+    "src/lib/atlas-nav.ts",
+    "src/lib/mock/**/*"
   ],
   "exclude": [
     "node_modules",
     ".next",
-    "dist",
-    "out",
-    "src/app/dashboard/EliteDashboard.tsx",
-    "src/app/dashboard/**/EliteDashboard.tsx"
+    "src/app/dashboard/EliteDashboard.tsx"
   ]
 }
