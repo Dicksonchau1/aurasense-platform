@@ -33,3 +33,13 @@ node_modules
 .env.vercel
 .next
 supabase/.temp/
+
+tsconfig.dashboard.tsbuildinfo
+tsc-dashboard.log
+eslint-dashboard.log
+pnpm-install.log
+
+tsconfig.dashboard.tsbuildinfo
+tsc-dashboard.log
+eslint-dashboard.log
+pnpm-install.log
