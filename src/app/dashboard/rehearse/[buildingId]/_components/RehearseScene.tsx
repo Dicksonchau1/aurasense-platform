@@ -86,6 +86,7 @@ export default function RehearseScene({ building, plans }: { building: Building;
       const tileSouth = Math.atan(Math.sinh(Math.PI * (1 - 2 * (tileY + 1) / n))) * 180 / Math.PI;
       const originLat = (tileSouth + tileNorth) / 2;
       const originLng = (tileWest + tileEast) / 2;
+
       map.addLayer(new MbisGlbLayer({ z: tileZ, x: tileX, y: tileY, originLat, originLng }) as any);
       map.addLayer(new WaypointDronesLayer() as any);
       map.addLayer(new PhysicsVizLayer({
@@ -96,132 +97,57 @@ export default function RehearseScene({ building, plans }: { building: Building;
         windDirDeg: 220,
       }) as any);
 
-
-      // Focus building pin
       const pinEl = document.createElement("div");
       pinEl.id = "rehearse-focus-pin";
       pinEl.style.cssText = "width:38px;height:54px;position:relative;cursor:pointer;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.5));";
-      pinEl.innerHTML = '<svg viewBox="0 0 24 36" xmlns="http://www.w3.org/2000/svg" width="38" height="54"><path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 24 12 24s12-15 12-24c0-6.6-5.4-12-12-12z" fill="#ef4444" stroke="#ffffff" stroke-width="1.5"/>ircle cx="12" cy="12" r="5" fill="#ffffff"/>ircle cx="12" cy="12" r="2.5" fill="#ef4444"/></svg>';
-      const pinPopup = new mapboxgl.Popup({ offset: 28, closeButton: false }).setHTML(
-        '<div style="font-family:ui-monospace,monospace;font-size:11px;color:#0a0a0a;padding:4px 8px;">' +
-        '<div style="color:#ef4444;font-weight:700;text-transform:uppercase;letter-spacing:1px;font-size:10px;margin-bottom:2px;">Focus Target</div>' +
-        '<div style="font-weight:700;color:#0a0a0a;">' + (building.name ?? "Unknown") + '</div>' +
-        '<div style="color:#666;">' + (building.height_m ?? "?") + 'm</div>' +
-        '</div>'
-      );
+      pinEl.innerHTML = '<svg viewBox="0 0 24 36" width="38" height="54"><path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 24 12 24s12-15 12-24c0-6.6-5.4-12-12-12z" fill="#ef4444" stroke="#fff" stroke-width="1.5"/>ircle cx="12" cy="12" r="5" fill="#fff"/>ircle cx="12" cy="12" r="2.5" fill="#ef4444"/></svg>';
       new mapboxgl.Marker({ element: pinEl, anchor: "bottom" })
         .setLngLat([building.lng as number, (building.lat as number) + 0.00005])
-        .setPopup(pinPopup)
         .addTo(map);
-      console.log("[Rehearse] MBIS layer added for tile", tileZ, tileX, tileY, "origin", originLat.toFixed(5), originLng.toFixed(5));
 
-      // Hovering drone above this building's rooftop
       const droneAlt = (building.height_m ?? 80) + 20;
-      // Route sources (E.3)
-      if (!map.getSource("rehearse-route")) {
-        map.addSource("rehearse-route", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
-        map.addSource("rehearse-route-pts", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
-        map.addLayer({
-          id: "rehearse-route-line",
-          source: "rehearse-route",
-          type: "line",
-          paint: { "line-color": "#facc15", "line-width": 2, "line-opacity": 0.4 },
-        } as any);
-        // Current-waypoint cyan halo pulse
-        map.addLayer({
-          id: "rehearse-route-pts-current",
-          source: "rehearse-route-pts",
-          type: "circle",
-          filter: ["==", ["get", "current"], true],
-          paint: {
-            "circle-radius": 18,
-            "circle-color": "rgba(34,211,238,0.0)",
-            "circle-stroke-width": 3,
-            "circle-stroke-color": "#22d3ee",
-            "circle-stroke-opacity": 0.85,
-          },
-        } as any);
-        map.addLayer({
-          id: "rehearse-route-pts-label",
-          source: "rehearse-route-pts",
-          type: "symbol",
-          layout: {
-            "text-field": ["concat", "WP ", ["to-string", ["get", "seq"]]],
-            "text-size": 11,
-            "text-offset": [0, 1.5],
-            "text-anchor": "top",
-          },
-          paint: { "text-color": "#facc15", "text-halo-color": "#0a0a0a", "text-halo-width": 1.5 },
-        } as any);
-      }
-      if (!map.getSource("rehearse-route")) {
-        map.addSource("rehearse-route", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
-        map.addSource("rehearse-route-pts", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
-        map.addLayer({
-          id: "rehearse-route-line",
-          source: "rehearse-route",
-          type: "line",
-          paint: { "line-color": "#facc15", "line-width": 2, "line-opacity": 0.4 },
-        } as any);
-        // Current-waypoint cyan halo pulse
-        map.addLayer({
-          id: "rehearse-route-pts-label",
-          source: "rehearse-route-pts",
-          type: "symbol",
-          layout: {
-            "text-field": ["concat", "WP ", ["to-string", ["get", "seq"]]],
-            "text-size": 11,
-            "text-offset": [0, 1.5],
-            "text-anchor": "top",
-          },
-          paint: { "text-color": "#facc15", "text-halo-color": "#0a0a0a", "text-halo-width": 1.5 },
-        } as any);
-      }
       map.addLayer(new HoverDroneLayer({
         lat: building.lat as number,
         lng: building.lng as number,
         altitudeM: droneAlt,
         batterySoc: 0.95,
-      }));
+      }) as any);
 
-      // Map click -> dispatch floor click event for right rail to consume
+      if (!map.getSource("rehearse-route")) {
+        map.addSource("rehearse-route", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+        map.addSource("rehearse-route-pts", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+        map.addSource("drone-trail", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+        map.addLayer({ id: "rehearse-route-line", source: "rehearse-route", type: "line", paint: { "line-color": "#facc15", "line-width": 2, "line-opacity": 0.4 } } as any);
+        map.addLayer({ id: "drone-trail-line", source: "drone-trail", type: "line", paint: { "line-color": "#22d3ee", "line-width": 6, "line-opacity": 0.95 } } as any);
+        map.addLayer({ id: "rehearse-route-pts-label", source: "rehearse-route-pts", type: "symbol", layout: { "text-field": ["concat", "WP ", ["to-string", ["get", "seq"]]], "text-size": 11, "text-offset": [0, 1.5], "text-anchor": "top" }, paint: { "text-color": "#facc15", "text-halo-color": "#0a0a0a", "text-halo-width": 1.5 } } as any);
+      }
+
       map.on("click", (ev: any) => {
-        const e = new CustomEvent("rehearse-map-click", {
-          detail: { lng: ev.lngLat.lng, lat: ev.lngLat.lat, building_id: building.id },
-        });
-        window.dispatchEvent(e);
+        window.dispatchEvent(new CustomEvent("rehearse-map-click", { detail: { lng: ev.lngLat.lng, lat: ev.lngLat.lat, building_id: building.id } }));
       });
-
-      const flightFeatures: any[] = [];
-      for (const p of plans) {
-        if (!p.waypoints || p.waypoints.length < 2) continue;
-        flightFeatures.push({
-          type: "Feature",
-          geometry: { type: "LineString", coordinates: p.waypoints.map((w) => [w.lng, w.lat]) },
-          properties: { id: p.id },
-        });
-      }
-      if (flightFeatures.length > 0) {
-        map.addSource("flight-paths", { type: "geojson", data: { type: "FeatureCollection", features: flightFeatures } as any });
-        map.addLayer({
-          id: "flight-paths-line",
-          source: "flight-paths",
-          type: "line",
-          paint: { "line-color": "#34d399", "line-width": 3, "line-opacity": 0.9, "line-dasharray": [2, 2] },
-        } as any);
-        map.addLayer({
-          id: "flight-paths-points",
-          source: "flight-paths",
-          type: "circle",
-          paint: { "circle-radius": 5, "circle-color": "#34d399", "circle-stroke-width": 2, "circle-stroke-color": "#0a131f" },
-        } as any);
-      }
     });
+
+    const trailCoords: Array<[number, number]> = [];
+    const trailHandler = (ev: any) => {
+      const d = ev?.detail;
+      if (!d) return;
+      trailCoords.push([d.lng, d.lat]);
+      if (trailCoords.length > 600) trailCoords.shift();
+      const src = map.getSource("drone-trail") as mapboxgl.GeoJSONSource | undefined;
+      if (src) {
+        src.setData({ type: "FeatureCollection", features: trailCoords.length >= 2 ? [{ type: "Feature", geometry: { type: "LineString", coordinates: trailCoords }, properties: {} }] : [] } as any);
+      }
+    };
+    const resetHandler = () => { trailCoords.length = 0; const src = map.getSource("drone-trail") as mapboxgl.GeoJSONSource | undefined; if (src) src.setData({ type: "FeatureCollection", features: [] } as any); };
+    window.addEventListener("rehearse-drone-position", trailHandler);
+    window.addEventListener("rehearse-trail-reset", resetHandler);
 
     map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), "top-right");
     map.addControl(new mapboxgl.ScaleControl({ unit: "metric" }), "bottom-left");
 
     return () => {
+      window.removeEventListener("rehearse-drone-position", trailHandler);
+      window.removeEventListener("rehearse-trail-reset", resetHandler);
       mapRef.current = null;
       map.remove();
     };
