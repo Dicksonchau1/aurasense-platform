@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package nepa.body_schema.federated.v1;
+
+import "google/protobuf/timestamp.proto";
+
+message FederatedUpdate {
+  string tenant_id                      = 1;
+  string robot_id                       = 2;
+  google.protobuf.Timestamp timestamp   = 3;
+  uint32 round_id                       = 4;
+  bytes wear_head_gradients             = 5;   // DP-noised
+  uint64 sample_count                   = 6;
+  float local_loss                      = 7;
+}
+
+message FederatedAggregate {
+  string tenant_id              = 1;
+  uint32 round_id               = 2;
+  bytes aggregated_weights      = 3;
+  uint32 contributing_robots    = 4;
+  float convergence_metric      = 5;
+}
+
+service FederatedAggregator {
+  rpc SubmitUpdate(FederatedUpdate) returns (FederatedAck);
+  rpc PullAggregate(PullRequest)    returns (FederatedAggregate);
+}
+
+message FederatedAck { bool accepted = 1; string reason = 2; }
+message PullRequest  { string tenant_id = 1; uint32 since_round = 2; }

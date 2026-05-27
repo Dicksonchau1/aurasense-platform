@@ -1,0 +1,1 @@
+// Catalog of available skills

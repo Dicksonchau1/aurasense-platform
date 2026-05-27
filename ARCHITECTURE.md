@@ -97,4 +97,32 @@ Companion to `AUDIT_2026_05.md`. Source of truth for **what's actually wired** a
 - 🔴 **ROS2 bag ingest**
 - 🔴 **Cloud → edge model-push channel** (today: manual `scp` + systemd restart)
 
-These are intentionally listed so future contributors don't think the system is doing more than it is.
+## Frontend Product Boundary Rules
+
+## Overview
+
+This codebase contains two distinct product frontends:
+
+- **ATLAS platform frontend**: For building, world-model, inspection, and flight-plan workflows.
+- **Rehearse Nurse frontend**: For nurse/tutor auth, skills library, rehearsal sessions, progress, achievements, cohorts, annotations, analytics, and NEPA training views.
+
+## Boundary Rules
+
+- Each product has its own top-level route group and supporting folders under `src/app/atlas` and `src/app/rehearse`.
+- Product-specific components, hooks, stores, and types must live in their respective product folders:
+    - `src/components/atlas`, `src/hooks/atlas`, `src/types/atlas`, `src/lib/atlas` for ATLAS
+    - `src/components/rehearse`, `src/hooks/rehearse`, `src/types/rehearse`, `src/lib/rehearse` for Rehearse Nurse
+- Only truly generic UI, auth primitives, and infrastructure utilities are allowed in shared locations:
+    - `src/components/ui`, `src/lib`, `src/types`
+- Do not share feature folders or import product-specific code across the two products.
+- Eliminate ambiguous names like `dashboard` for nurse-specific features; use clear, product-scoped names.
+- Preserve existing ATLAS API paths (e.g., `api/atlas/...`) unless backend refactoring is explicitly required.
+
+## Folder Rules
+
+- Anything tied to skills rehearsal, tutor review, nurse progress, or NEPA training stays in Rehearse.
+- Anything tied to buildings, world models, flight plans, inspections, maps, or MBIS tiles stays in ATLAS.
+
+---
+
+This separation ensures clean boundaries and prevents cross-product ambiguity. All contributors must follow these rules for new features and refactors.

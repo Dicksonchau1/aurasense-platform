@@ -19,6 +19,8 @@ function Card({
     />
   )
 }
+// This file has been moved to /home/jetson/aurasense-platform/src/shared/components/ui/card.tsx
+// Please update your imports accordingly.
 
 function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (

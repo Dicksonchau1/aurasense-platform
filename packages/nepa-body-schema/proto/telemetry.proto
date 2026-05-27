@@ -1,0 +1,4 @@
+// Placeholder for future telemetry.proto if needed
+syntax = "proto3";
+
+package nepa.body_schema.telemetry.v1;

@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+norse
+snntorch
+torch
+numpy
+pydantic

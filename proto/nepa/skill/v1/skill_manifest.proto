@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package nepa.skill.v1;
+
+message SkillManifest {
+  string skill_id = 1;
+  uint32 version = 2;
+  string semver = 3;
+  uint32 parent_version = 4;
+  string author_tenant_id = 5;
+  repeated string capabilities = 6;
+  repeated string supported_embodiments = 7;
+  string constraints = 8;
+  message ModelArtifacts {
+    string policy_uri = 1;
+    string world_model_uri = 2;
+    string critic_uri = 3;
+    string sha256 = 4;
+  }
+  ModelArtifacts model_artifacts = 9;
+  string retargeting_profile = 10;
+  message TrainingProvenance {
+    repeated string dataset_ids = 1;
+    string run_id = 2;
+    uint32 base_skill_version = 3;
+  }
+  TrainingProvenance training_provenance = 11;
+  repeated string certifications = 12;
+  string signature = 13;
+  string chain_head = 14;
+  uint64 published_at = 15;
+}

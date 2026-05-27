@@ -103,3 +103,49 @@ Drop your model in `models/`, then:
     make journal     # tail systemd logs
     make stop        # stop systemd service
     make clean       # remove generated proto stubs + __pycache__
+
+---
+
+## Substrate HTTP Server (PR D-4)
+
+The substrate is a sibling FastAPI service that exposes the three endpoints `SubstrateClient.ts` calls. It runs alongside the gRPC inference server.
+
+### Run
+
+```bash
+# Install substrate deps (additive to existing requirements)
+pip install -r requirements.txt
+
+# Boot substrate on :8080
+bash scripts/run_substrate.sh
+
+# Or with hot-reload for dev
+NEPA_SUBSTRATE_RELOAD=1 bash scripts/run_substrate.sh
+```
+
+### Endpoints
+
+- `GET  /substrate/run_id` — returns the singleton run_id for this process
+- `POST /substrate/priors` — load signature_map priors as channel initial state
+- `POST /substrate/envelope` — submit a ShapeOfChangeEnvelope, receive action list
+- `GET  /health` — substrate liveness + tick count + dopamine level
+- `GET  /substrate/state` — full state dump (debug only)
+
+### Environment
+
+| Var | Default | Purpose |
+|---|---|---|
+| `NEPA_SUBSTRATE_PORT` | `8080` | HTTP port |
+| `NEPA_SUBSTRATE_HOST` | `0.0.0.0` | Bind host |
+| `NEPA_SUBSTRATE_RUN_ID` | UUID4 | Override singleton run_id (for tests) |
+| `NEPA_SUBSTRATE_RELOAD` | unset | Enable uvicorn --reload |
+
+### Systemd
+
+```bash
+sudo cp scripts/nepa-substrate.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable nepa-substrate
+sudo systemctl start nepa-substrate
+sudo systemctl status nepa-substrate
+```

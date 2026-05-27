@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package nepa.skill.v1;
+
+message SkillBundle {
+  string skill_id = 1;
+  uint32 version = 2;
+  bytes bundle_data = 3;
+  string signature = 4;
+  string chain_head = 5;
+}

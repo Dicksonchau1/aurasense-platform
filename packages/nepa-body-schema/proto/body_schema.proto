@@ -1,0 +1,206 @@
+syntax = "proto3";
+
+package nepa.body_schema.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// =====================================================================
+// Embodiment profile — registered once per robot class
+// =====================================================================
+message EmbodimentProfile {
+  string profile_id              = 1;   // "figure-03", "atlas-bd-2026"
+  string vendor                  = 2;
+  string model                   = 3;
+  uint32 dof_count               = 4;
+  repeated JointSpec joints      = 5;
+  KinematicTree kinematic_tree   = 6;
+  PowerSpec power_spec           = 7;
+  ThermalSpec thermal_spec       = 8;
+  string firmware_version        = 9;
+}
+
+message JointSpec {
+  uint32 joint_id                = 1;
+  string name                    = 2;             // "left_shoulder_pitch"
+  JointType type                 = 3;
+  float min_position_rad         = 4;
+  float max_position_rad         = 5;
+  float max_velocity_rad_s       = 6;
+  float max_torque_nm            = 7;
+  float thermal_limit_c          = 8;
+  string actuator_model          = 9;
+}
+
+enum JointType {
+  JOINT_TYPE_UNSPECIFIED = 0;
+  JOINT_TYPE_REVOLUTE    = 1;
+  JOINT_TYPE_PRISMATIC   = 2;
+  JOINT_TYPE_SPHERICAL   = 3;
+}
+
+message KinematicTree {
+  repeated KinematicLink links = 1;
+}
+
+message KinematicLink {
+  uint32 link_id          = 1;
+  uint32 parent_link_id   = 2;
+  uint32 joint_id         = 3;
+  float mass_kg           = 4;
+}
+
+message PowerSpec {
+  float battery_capacity_wh    = 1;
+  float nominal_voltage_v      = 2;
+  uint32 swap_duration_s       = 3;
+  uint32 typical_runtime_s     = 4;
+}
+
+message ThermalSpec {
+  float ambient_max_c          = 1;
+  float ambient_min_c          = 2;
+}
+
+// =====================================================================
+// Telemetry frame — produced at native sensor rate
+// =====================================================================
+message TelemetryFrame {
+  string robot_id                       = 1;
+  google.protobuf.Timestamp timestamp   = 2;
+  uint64 sequence_id                    = 3;
+
+  repeated float joint_position_rad     = 4;   // size = dof_count
+  repeated float joint_velocity_rad_s   = 5;
+  repeated float joint_current_a        = 6;
+  repeated float joint_temp_c           = 7;
+  repeated float joint_torque_nm        = 8;
+
+  IMUSample imu                         = 9;
+  repeated ContactSample contacts       = 10;
+  optional bytes audio_window           = 11;   // 16kHz PCM, ~10ms
+
+  TaskContext task_context              = 12;
+}
+
+message IMUSample {
+  float accel_x = 1; float accel_y = 2; float accel_z = 3;
+  float gyro_x  = 4; float gyro_y  = 5; float gyro_z  = 6;
+}
+
+message ContactSample {
+  string body_part      = 1;            // "left_hand", "right_foot"
+  float normal_force_n  = 2;
+  float shear_force_n   = 3;
+  bool is_grasp         = 4;
+}
+
+message TaskContext {
+  string skill_id            = 1;
+  string skill_phase         = 2;       // "approach", "grasp", "transport"
+  AutonomyLevel autonomy     = 3;
+  float payload_kg           = 4;
+  string mission_id          = 5;
+}
+
+enum AutonomyLevel {
+  AUTONOMY_UNSPECIFIED = 0;
+  AUTONOMY_L0_MANUAL   = 1;
+  AUTONOMY_L1_SUGGEST  = 2;
+  AUTONOMY_L2_SUPERVISED = 3;
+  AUTONOMY_L3_GUARDED  = 4;
+  AUTONOMY_L4_SITE_CERT = 5;
+  AUTONOMY_L5_FLEET_CERT = 6;
+}
+
+// =====================================================================
+// Body schema state — primary output of the module
+// =====================================================================
+message BodySchemaState {
+  string robot_id                       = 1;
+  google.protobuf.Timestamp timestamp   = 2;
+
+  bytes embedding                       = 3;   // float16[256] packed
+  uint32 embedding_dim                  = 4;
+  float confidence                      = 5;   // 0..1
+  float novelty_score                   = 6;   // z-score
+  uint32 schema_version                 = 7;
+
+  repeated JointHealth per_joint        = 8;
+  repeated float thermal_margin_c       = 9;
+  RecommendedAction recommended_action  = 10;
+  string recommendation_reason          = 11;
+
+  uint64 operational_hours              = 12;
+  PlasticityState plasticity            = 13;
+}
+
+message JointHealth {
+  uint32 joint_id                = 1;
+  float health_score             = 2;   // 0=failing, 1=nominal
+  float estimated_rul_hours      = 3;
+  float wear_velocity            = 4;   // health units per hour
+  repeated WearMode active_modes = 5;
+}
+
+enum WearMode {
+  WEAR_MODE_UNSPECIFIED  = 0;
+  WEAR_MODE_FRICTION     = 1;
+  WEAR_MODE_BACKLASH     = 2;
+  WEAR_MODE_THERMAL      = 3;
+  WEAR_MODE_BEARING      = 4;
+  WEAR_MODE_ENCODER_DRIFT = 5;
+  WEAR_MODE_GEAR         = 6;
+}
+
+enum RecommendedAction {
+  RECOMMENDED_NONE                 = 0;
+  RECOMMENDED_REDUCE_PAYLOAD       = 1;
+  RECOMMENDED_REROUTE_LIGHT_TASK   = 2;
+  RECOMMENDED_RETURN_TO_CHARGE     = 3;
+  RECOMMENDED_REQUEST_SERVICE      = 4;
+  RECOMMENDED_EMERGENCY_STOP       = 5;
+}
+
+message PlasticityState {
+  float current_dopamine_level   = 1;   // M(t)
+  uint64 stdp_updates_count      = 2;
+  float weight_norm              = 3;
+  bool calibration_complete      = 4;
+}
+
+// =====================================================================
+// Events — emitted on threshold crossings
+// =====================================================================
+message AnomalyEvent {
+  string robot_id                       = 1;
+  google.protobuf.Timestamp timestamp   = 2;
+  string event_id                       = 3;
+  AnomalySeverity severity              = 4;
+  repeated uint32 attributed_joint_ids  = 5;
+  float reconstruction_error            = 6;
+  float z_score                         = 7;
+  string description                    = 8;
+  bytes evidence_window                 = 9;   // last N seconds telemetry
+}
+
+enum AnomalySeverity {
+  SEVERITY_UNSPECIFIED = 0;
+  SEVERITY_INFO        = 1;
+  SEVERITY_WARNING     = 2;
+  SEVERITY_CRITICAL    = 3;
+  SEVERITY_EMERGENCY   = 4;
+}
+
+// =====================================================================
+// Serialized schema — for export / transfer / federated sync
+// =====================================================================
+message SerializedSchema {
+  string robot_id              = 1;
+  string profile_id            = 2;
+  uint32 schema_version        = 3;
+  bytes spiking_weights        = 4;   // compressed network state
+  bytes plasticity_state       = 5;
+  bytes wear_head_weights      = 6;   // separately federatable
+  uint64 operational_hours     = 7;
+  string checksum              = 8;
+}

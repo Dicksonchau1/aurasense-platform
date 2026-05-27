@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package nepa.skill.v1;
+
+message CertCard {
+  string cert_id = 1;
+  string skill_id = 2;
+  uint32 skill_version = 3;
+  string embodiment_class = 4;
+  string scope = 5;
+  string site_id = 6;
+  message Metrics {
+    float success_rate = 1;
+    float p95_latency_ms = 2;
+    float human_intervention_rate = 3;
+    float critic_risk_mean = 4;
+    float golden_replay_divergence = 5;
+  }
+  Metrics metrics = 7;
+  repeated string evidence_pack_uris = 8;
+  uint64 valid_from = 9;
+  uint64 valid_until = 10;
+  uint64 revoked_at = 11;
+  string revocation_reason = 12;
+  string issuer = 13;
+  string signature = 14;
+  string chain_head = 15;
+}
