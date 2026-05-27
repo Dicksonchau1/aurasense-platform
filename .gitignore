@@ -33,3 +33,30 @@ node_modules
 .env.vercel
 .next
 supabase/.temp/
+# Python
+.venv/
+venv/
+**/.venv/
+**/__pycache__/
+*.pyc
+
+# Node
+node_modules/
+.next/
+dist/
+build/
+
+# Local env
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+
+# OS/editor
+.DS_Store
+Thumbs.db
+
+# Runtime / generated
+nepa_runtime/.venv-substrate/
