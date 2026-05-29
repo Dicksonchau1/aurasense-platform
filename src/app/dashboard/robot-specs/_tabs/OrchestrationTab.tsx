@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Card, Badge, Row } from "../../_components/SpecCard";
+import { getPipelineLive } from "@/lib/nepa-client";
 
 const PIPELINE_STAGES = [
   { name:"Sensor Ingestion",    status:"healthy", hz:32.1, ms:1.2 },
@@ -18,15 +19,24 @@ export default function OrchestrationTab() {
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
-    const id = setInterval(() => {
+    let cancelled = false;
+    const animate = () => setStages(s => s.map(x => ({
+      ...x,
+      hz: Math.round((x.hz + (Math.random()-.5)*2) * 10) / 10,
+      ms: Math.round((x.ms + (Math.random()-.5)*.5) * 10) / 10,
+    })));
+    const poll = async () => {
+      try {
+        const data = await getPipelineLive() as Record<string, unknown>;
+        if (!cancelled && Array.isArray(data.stages)) {
+          setStages(data.stages as typeof PIPELINE_STAGES);
+        } else { animate(); }
+      } catch { if (!cancelled) animate(); }
       setTick(t => t + 1);
-      setStages(s => s.map(x => ({
-        ...x,
-        hz: Math.round((x.hz + (Math.random()-.5)*2) * 10) / 10,
-        ms: Math.round((x.ms + (Math.random()-.5)*.5) * 10) / 10,
-      })));
-    }, 2000);
-    return () => clearInterval(id);
+    };
+    poll();
+    const id = setInterval(poll, 2000);
+    return () => { cancelled = true; clearInterval(id); };
   }, []);
 
   const totalLatency = stages.reduce((s,x) => s+x.ms, 0);

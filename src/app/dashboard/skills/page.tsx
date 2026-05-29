@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card, Badge } from "../_components/SpecCard";
 
 interface Skill {
@@ -38,6 +39,7 @@ export default function SkillsPage() {
   const [wmBuilding, setWmBuilding] = useState("ICC");
   const WM_BUILDINGS = ["ICC","IFC2","CITIC","BOC","HSBC","CENTRAL","NINA","SKYLINE"];
 
+  const router = useRouter();
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(""), 2500); };
 
   const filtered = skills.filter(s =>
@@ -76,7 +78,7 @@ export default function SkillsPage() {
         </div>
         <div style={{display:"flex",gap:8}}>
           <button onClick={()=>setNewSkillOpen(true)} style={btnT}>+ New Skill</button>
-          <button onClick={()=>showToast("Compose chain opened")} style={btnG}>Compose Chain</button>
+          <button onClick={()=>{ router.push("/dashboard/mission-planner"); showToast("Opening Compose Chain in Mission Planner"); }} style={btnG}>Compose Chain</button>
         </div>
       </div>
 

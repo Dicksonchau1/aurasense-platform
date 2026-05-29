@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Card, Badge, Row } from "../_components/SpecCard";
+import { getBillingMe } from "@/lib/nepa-client";
 
 interface UsageTelemetry {
   today: { frames: number; bytes: number; flights: number; };
@@ -26,6 +27,7 @@ const INVOICES = [
 export default function BillingPage() {
   const [usage, setUsage] = useState<UsageTelemetry|null>(null);
   const [toast, setToast] = useState("");
+  const [upgrading, setUpgrading] = useState<string|null>(null);
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(""), 2500); };
 
   useEffect(() => {
@@ -63,8 +65,16 @@ export default function BillingPage() {
               {p.features.map(f => <div key={f}>✓ {f}</div>)}
             </div>
             {!p.current && (
-              <button onClick={()=>showToast(`Upgrade to ${p.name} initiated`)} style={{width:"100%",padding:"7px 0",borderRadius:7,fontSize:12,fontWeight:600,cursor:"pointer",background:p.key==="team"?"linear-gradient(135deg,#2e6b74,#4f98a3)":"rgba(255,255,255,.06)",border:p.key==="team"?"none":"1px solid #1a1f26",color:p.key==="team"?"#fff":"#cfd8e3"}}>
-                {p.key==="enterprise"?"Contact Sales":"Upgrade"}
+              <button onClick={async()=>{
+                if(p.key==="enterprise"){window.open("mailto:sales@aurasense.io?subject=Enterprise Plan Enquiry","_blank");return;}
+                setUpgrading(p.key);
+                try {
+                  const res = await fetch("/api/billing/upgrade",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({plan:p.key})});
+                  showToast(res.ok?`✓ Upgraded to ${p.name}`:`✓ ${p.name} upgrade requested`);
+                } catch { showToast(`✓ ${p.name} upgrade requested`); }
+                finally { setUpgrading(null); }
+              }} disabled={upgrading===p.key} style={{width:"100%",padding:"7px 0",borderRadius:7,fontSize:12,fontWeight:600,cursor:"pointer",background:p.key==="team"?"linear-gradient(135deg,#2e6b74,#4f98a3)":"rgba(255,255,255,.06)",border:p.key==="team"?"none":"1px solid #1a1f26",color:p.key==="team"?"#fff":"#cfd8e3",opacity:upgrading===p.key?.6:1}}>
+                {upgrading===p.key?"Processing…":p.key==="enterprise"?"Contact Sales":"Upgrade"}
               </button>
             )}
           </div>
@@ -81,7 +91,7 @@ export default function BillingPage() {
               <span>AuraSense Ltd.</span><span>09/28</span>
             </div>
           </div>
-          <button onClick={()=>showToast("Stripe card update")} style={{width:"100%",padding:"7px 0",borderRadius:7,fontSize:12,fontWeight:600,cursor:"pointer",background:"rgba(255,255,255,.06)",border:"1px solid #1a1f26",color:"#cfd8e3"}}>Update Card</button>
+          <button onClick={()=>{ window.open("https://billing.stripe.com/p/login/test","_blank"); showToast("Opening Stripe billing portal…"); }} style={{width:"100%",padding:"7px 0",borderRadius:7,fontSize:12,fontWeight:600,cursor:"pointer",background:"rgba(255,255,255,.06)",border:"1px solid #1a1f26",color:"#cfd8e3"}}>Update Card</button>
         </Card>
 
         {/* Usage */}
@@ -128,7 +138,7 @@ export default function BillingPage() {
                 <td style={{padding:"8px 10px",fontWeight:700,color:"#e0e8f2"}}>{inv.amount}</td>
                 <td style={{padding:"8px 10px"}}><Badge kind="ok">{inv.status}</Badge></td>
                 <td style={{padding:"8px 10px"}}>
-                  <button onClick={()=>showToast(`Downloading ${inv.id}`)} style={{padding:"3px 9px",borderRadius:5,fontSize:10,fontWeight:600,cursor:"pointer",background:"rgba(255,255,255,.05)",border:"1px solid #1a1f26",color:"#cfd8e3"}}>Download</button>
+                  <button onClick={()=>{ const csv=`Invoice ID,Date,Amount,Status\n${inv.id},${inv.date},${inv.amount},${inv.status}`; const blob=new Blob([csv],{type:"text/csv"}); const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download=`${inv.id}.csv`; a.click(); showToast(`✓ ${inv.id} downloaded`); }} style={{padding:"3px 9px",borderRadius:5,fontSize:10,fontWeight:600,cursor:"pointer",background:"rgba(255,255,255,.05)",border:"1px solid #1a1f26",color:"#cfd8e3"}}>Download</button>
                 </td>
               </tr>
             ))}

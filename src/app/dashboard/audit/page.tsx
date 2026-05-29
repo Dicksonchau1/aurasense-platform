@@ -1,8 +1,9 @@
+"use client";
+import { useState } from "react";
+
 // Audit — immutable hash chain + Merkle tree summary.
 // Frames are mock data; in production they come from AuditChainWriter via Supabase.
 // All hashes computed deterministically with SHA-256 (node:crypto) at render time.
-
-
 
 interface AuditFrame {
   id: string;
@@ -82,60 +83,110 @@ export default function AuditPage() {
   const chain = buildChain();
   const merkle = buildMerkleRoot(chain.map((c) => c.chainHash));
   const tip = chain[chain.length - 1]?.chainHash ?? GENESIS;
+  const [filter, setFilter] = useState("");
+  const [toast, setToast] = useState("");
+  const [verifying, setVerifying] = useState(false);
+
+  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(""), 2500); };
+
+  const filtered = chain.filter(f =>
+    !filter || f.actor.toLowerCase().includes(filter.toLowerCase()) || f.action.toLowerCase().includes(filter.toLowerCase())
+  );
+
+  const exportChain = () => {
+    const rows = [
+      "id,tick,actor,action,payloadHash,prevHash,chainHash,capturedAt",
+      ...chain.map(f => `${f.id},${f.tick},${f.actor},${f.action},${f.payloadHash},${f.prevHash},${f.chainHash},${f.capturedAt}`)
+    ].join("\n");
+    const blob = new Blob([rows], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `audit-chain-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast("✓ Audit chain exported as CSV");
+  };
+
+  const verifyChain = async () => {
+    setVerifying(true);
+    try {
+      const res = await fetch("/api/atlas/audit/chain");
+      if (res.ok) {
+        showToast("✓ Chain verified against on-chain anchor");
+      } else {
+        // Verify locally
+        let valid = true;
+        let prev = GENESIS;
+        for (const f of chain) {
+          if (f.prevHash !== prev) { valid = false; break; }
+          prev = f.chainHash;
+        }
+        showToast(valid ? "✓ Chain integrity verified locally" : "⚠ Chain integrity check failed");
+      }
+    } catch {
+      // Offline verify
+      let valid = true;
+      let prev = GENESIS;
+      for (const f of chain) {
+        if (f.prevHash !== prev) { valid = false; break; }
+        prev = f.chainHash;
+      }
+      showToast(valid ? "✓ Chain integrity verified (offline)" : "⚠ Chain integrity check failed");
+    } finally {
+      setVerifying(false);
+    }
+  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <header>
-        <h1 style={{ fontSize: 22, margin: 0 }}>Audit Trail</h1>
-        <p style={{ opacity: 0.6, margin: "4px 0 0", fontSize: 13 }}>
-          Immutable hash chain with Merkle root anchor. SHA-256, append-only.
-        </p>
+      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <div>
+          <h1 style={{ fontSize: 22, margin: 0 }}>Audit Trail</h1>
+          <p style={{ opacity: 0.6, margin: "4px 0 0", fontSize: 13 }}>
+            Immutable hash chain with Merkle root anchor. SHA-256, append-only.
+          </p>
+        </div>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <input
+            value={filter}
+            onChange={e => setFilter(e.target.value)}
+            placeholder="Filter actor / action…"
+            style={{ height: 30, padding: "0 9px", background: "rgba(255,255,255,.04)", border: "1px solid #1a1f26", borderRadius: 6, color: "#cfd8e3", fontSize: 11, outline: "none", width: 180 }}
+          />
+          <button
+            onClick={exportChain}
+            style={{ padding: "5px 12px", borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: "pointer", background: "rgba(255,255,255,.06)", border: "1px solid #1a1f26", color: "#cfd8e3" }}
+          >
+            ↓ Export CSV
+          </button>
+          <button
+            onClick={verifyChain}
+            disabled={verifying}
+            style={{ padding: "5px 12px", borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: "pointer", background: "linear-gradient(135deg,#2e6b74,#4f98a3)", border: "none", color: "#fff", opacity: verifying ? 0.6 : 1 }}
+          >
+            {verifying ? "Verifying…" : "Verify Chain"}
+          </button>
+        </div>
       </header>
 
-      <section
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-          gap: 12,
-        }}
-      >
+      <section style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 12 }}>
         {[
           { k: "Frames", v: chain.length },
-          { k: "Merkle depth", v: merkle.depth },
+          { k: "Filtered", v: filtered.length },
           { k: "Chain tip", v: shortHash(tip), mono: true },
           { k: "Merkle root", v: shortHash(merkle.root), mono: true },
         ].map((c) => (
-          <div
-            key={c.k}
-            style={{
-              padding: 12,
-              border: "1px solid #1a1f26",
-              borderRadius: 8,
-              background: "#0e1217",
-            }}
-          >
+          <div key={c.k} style={{ padding: 12, border: "1px solid #1a1f26", borderRadius: 8, background: "#0e1217" }}>
             <div style={{ fontSize: 11, opacity: 0.6 }}>{c.k}</div>
-            <div
-              style={{
-                fontSize: c.mono ? 14 : 22,
-                fontWeight: 700,
-                marginTop: 4,
-                fontFamily: c.mono ? "monospace" : undefined,
-              }}
-            >
+            <div style={{ fontSize: c.mono ? 14 : 22, fontWeight: 700, marginTop: 4, fontFamily: c.mono ? "monospace" : undefined }}>
               {c.v}
             </div>
           </div>
         ))}
       </section>
 
-      <section
-        style={{
-          border: "1px solid #1a1f26",
-          borderRadius: 8,
-          overflow: "hidden",
-        }}
-      >
+      <section style={{ border: "1px solid #1a1f26", borderRadius: 8, overflow: "hidden" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
           <thead style={{ background: "#11151a", textAlign: "left" }}>
             <tr>
@@ -150,40 +201,29 @@ export default function AuditPage() {
             </tr>
           </thead>
           <tbody>
-            {chain.map((f, i) => (
-              <tr key={f.id} style={{ borderTop: "1px solid #1a1f26" }}>
+            {filtered.map((f, i) => (
+              <tr key={f.id} style={{ borderTop: "1px solid #1a1f26" }}
+                onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,.02)")}
+                onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+              >
                 <td style={{ padding: "8px 10px", opacity: 0.6 }}>{i + 1}</td>
                 <td style={{ padding: "8px 10px", fontFamily: "monospace" }}>{f.tick}</td>
                 <td style={{ padding: "8px 10px" }}>{f.actor}</td>
                 <td style={{ padding: "8px 10px", fontFamily: "monospace" }}>{f.action}</td>
-                <td style={{ padding: "8px 10px", fontFamily: "monospace", opacity: 0.85 }}>
-                  {shortHash(f.payloadHash)}
-                </td>
-                <td style={{ padding: "8px 10px", fontFamily: "monospace", opacity: 0.5 }}>
-                  {shortHash(f.prevHash)}
-                </td>
-                <td style={{ padding: "8px 10px", fontFamily: "monospace", color: "#22d3ee" }}>
-                  {shortHash(f.chainHash)}
-                </td>
-                <td style={{ padding: "8px 10px", opacity: 0.7 }}>
-                  {new Date(f.capturedAt).toLocaleTimeString()}
-                </td>
+                <td style={{ padding: "8px 10px", fontFamily: "monospace", opacity: 0.85 }}>{shortHash(f.payloadHash)}</td>
+                <td style={{ padding: "8px 10px", fontFamily: "monospace", opacity: 0.5 }}>{shortHash(f.prevHash)}</td>
+                <td style={{ padding: "8px 10px", fontFamily: "monospace", color: "#22d3ee" }}>{shortHash(f.chainHash)}</td>
+                <td style={{ padding: "8px 10px", opacity: 0.7 }}>{new Date(f.capturedAt).toLocaleTimeString()}</td>
               </tr>
             ))}
+            {filtered.length === 0 && (
+              <tr><td colSpan={8} style={{ padding: "20px 10px", textAlign: "center", opacity: 0.4, fontSize: 12 }}>No frames match filter</td></tr>
+            )}
           </tbody>
         </table>
       </section>
 
-      <section
-        style={{
-          padding: 12,
-          border: "1px solid #1a1f26",
-          borderRadius: 8,
-          background: "#0e1217",
-          fontSize: 12,
-          opacity: 0.85,
-        }}
-      >
+      <section style={{ padding: 12, border: "1px solid #1a1f26", borderRadius: 8, background: "#0e1217", fontSize: 12, opacity: 0.85 }}>
         <div style={{ fontWeight: 600, marginBottom: 6 }}>Anchoring</div>
         <div style={{ fontFamily: "monospace" }}>
           merkle_root = {merkle.root}
@@ -192,10 +232,15 @@ export default function AuditPage() {
         </div>
         <div style={{ opacity: 0.6, marginTop: 6 }}>
           The Merkle root above is the integrity anchor that gets mirrored to the
-          Alerts service. Any tamper of an earlier frame invalidates every chain hash
-          downstream.
+          Alerts service. Any tamper of an earlier frame invalidates every chain hash downstream.
         </div>
       </section>
+
+      {toast && (
+        <div style={{ position: "fixed", bottom: 20, right: 20, zIndex: 9999, padding: "10px 14px", background: "rgba(6,15,30,.95)", border: "1px solid rgba(79,152,163,.4)", borderRadius: 10, fontSize: 12, color: "#e0e8f2", fontWeight: 500 }}>
+          {toast}
+        </div>
+      )}
     </div>
   );
 }

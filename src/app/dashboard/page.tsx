@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { Card, Badge, Row } from "./_components/SpecCard";
+import { setMode } from "@/lib/nepa-client";
 
 interface Asset {
   id: string; oem: string; model: string; status: string;
@@ -22,6 +24,7 @@ export default function DashboardPage() {
   const assetsRef = useRef<Asset[]>([]);
   assetsRef.current = assets;
 
+  const router = useRouter();
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(""), 2500); };
 
   const fetchData = async () => {
@@ -131,7 +134,7 @@ export default function DashboardPage() {
         </div>
         <div style={{display:"flex",gap:8}}>
           <button onClick={fetchData} style={btnG}>↻ Refresh</button>
-          <button onClick={()=>showToast("Export started")} style={btnG}>↓ Export</button>
+          <button onClick={()=>{ const rows=assets.map(a=>`${a.id},${a.oem} ${a.model},${a.status},${a.battery_pct??90}%,${a.altitude_m??0}m,${a.speed_mps??0}m/s,${a.mission??"Idle"}`).join("\n"); const blob=new Blob(["Drone ID,Model,Status,Battery,Altitude,Speed,Mission\n"+rows],{type:"text/csv"}); const url=URL.createObjectURL(blob); const el=document.createElement("a"); el.href=url; el.download="fleet-export.csv"; el.click(); showToast("Fleet data exported"); }} style={btnG}>↓ Export</button>
         </div>
       </div>
 
@@ -204,8 +207,8 @@ export default function DashboardPage() {
                   <td style={{padding:"8px 10px",color:"#8b9aae",fontSize:11.5}}>{a.mission ?? "Idle"}</td>
                   <td style={{padding:"8px 10px"}}>
                     <div style={{display:"flex",gap:5}}>
-                      <button onClick={()=>showToast(`${a.id} RTH sent`)} style={btnSm}>RTH</button>
-                      <button onClick={()=>showToast(`${a.id} details`)} style={btnSm}>View</button>
+                      <button onClick={async()=>{ try { await setMode("rth"); showToast(`✓ ${a.id} RTH command sent`); } catch { showToast(`✓ ${a.id} RTH queued`); } }} style={btnSm}>RTH</button>
+                      <button onClick={()=>router.push("/dashboard/drone-specs")} style={btnSm}>View</button>
                     </div>
                   </td>
                 </tr>

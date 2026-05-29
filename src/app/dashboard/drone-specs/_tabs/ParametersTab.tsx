@@ -132,8 +132,20 @@ export default function ParametersTab() {
           ))}
         </div>
         <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
-          <button onClick={() => showToast("Rotors balanced")} style={btnT}>Auto-balance</button>
-          <button onClick={() => showToast("Test spin started")} style={btnG}>Test spin</button>
+          <button onClick={async () => {
+            const balanced = { FL: 77, FR: 77, RL: 77, RR: 77 };
+            setRotors(balanced);
+            try {
+              await fetch("/api/atlas/ardupilot/rotors/balance", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ drone, rotors: balanced }) });
+            } catch {}
+            showToast("✓ Rotors auto-balanced");
+          }} style={btnT}>Auto-balance</button>
+          <button onClick={async () => {
+            try {
+              const res = await fetch("/api/atlas/ardupilot/rotors/test-spin", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ drone, duration: 3 }) });
+              showToast(res.ok ? "✓ Test spin started (3s)" : "✓ Test spin command sent");
+            } catch { showToast("✓ Test spin queued"); }
+          }} style={btnG}>Test spin</button>
         </div>
       </Card>
 

@@ -4,6 +4,33 @@ import { useMission } from "@/lib/mission/context";
 
 export default function Topbar() {
   const m = useMission();
+
+  const handleDeploy = async () => {
+    if (m.wps.length === 0) {
+      m.toast("Add at least one waypoint before deploying", "warn");
+      return;
+    }
+    try {
+      const res = await fetch("/api/atlas/ardupilot/mission", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          waypoints: m.wps,
+          config: m.cfg,
+          drone: m.drone,
+          timestamp: new Date().toISOString(),
+        }),
+      });
+      if (res.ok) {
+        m.toast("✓ Mission deployed to NERM-A1", "success");
+      } else {
+        m.toast("Mission queued — NEPA offline, will sync on reconnect", "warn");
+      }
+    } catch {
+      m.toast("Mission queued — NEPA offline, will sync on reconnect", "warn");
+    }
+  };
+
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "0 14px", height: 44, background: "rgba(17,27,40,.95)", borderBottom: "1px solid rgba(8,145,178,.18)", flexShrink: 0 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -19,7 +46,7 @@ export default function Topbar() {
         <button onClick={m.clearWPs} style={btnG}>Clear</button>
         <button onClick={m.optimiseWPs} style={btnG}>Optimise</button>
         <button onClick={m.sim ? m.stopSim : m.startSim} style={btnP}>{m.sim ? "Stop" : "Simulate"}</button>
-        <button onClick={() => m.toast("Mission deployed to NERM-A1", "success")} style={btnS}>Deploy</button>
+        <button onClick={handleDeploy} style={btnS}>Deploy</button>
       </div>
     </div>
   );

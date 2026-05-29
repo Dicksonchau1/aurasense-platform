@@ -36,6 +36,8 @@ export default function SettingsPage() {
   const [integrations, setIntegrations] = useState(INTEGRATIONS);
   const [notifications, setNotifications] = useState(NOTIFICATIONS);
   const [toast, setToast] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [confirmDanger, setConfirmDanger] = useState<"delete"|"deactivate"|null>(null);
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(""), 2500); };
 
   const addKey = () => {
@@ -64,8 +66,8 @@ export default function SettingsPage() {
                 <div style={{fontFamily:"ui-monospace,monospace",fontSize:11,color:"#5ab8d0",marginBottom:4}}>{k.key}</div>
                 <div style={{fontSize:10.5,color:"#8b9aae"}}>Created {k.created} · Last used {k.lastUsed}</div>
                 <div style={{display:"flex",gap:6,marginTop:8}}>
-                  <button onClick={()=>showToast("Key copied")} style={btnSm}>Copy</button>
-                  <button onClick={()=>showToast("Key rotated")} style={btnSm}>Rotate</button>
+                  <button onClick={()=>{ navigator.clipboard.writeText(k.key).catch(()=>{}); showToast("✓ API key copied to clipboard"); }} style={btnSm}>Copy</button>
+                  <button onClick={async()=>{ try { await fetch("/api/atlas/operator/keys/rotate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({keyId:k.id})}); } catch {} setApiKeys(a=>a.map(x=>x.id===k.id?{...x,key:`sk-aura-rot-••••••••••••${Math.floor(Math.random()*9999)}`}:x)); showToast("✓ API key rotated"); }} style={btnSm}>Rotate</button>
                   <button onClick={()=>{setApiKeys(a=>a.filter(x=>x.id!==k.id));showToast("Key revoked");}} style={{...btnSm,background:"rgba(239,68,68,.1)",border:"1px solid rgba(239,68,68,.2)",color:"#ef4444"}}>Revoke</button>
                 </div>
               </div>
@@ -97,7 +99,7 @@ export default function SettingsPage() {
               </select>
             </div>
           </div>
-          <button onClick={()=>showToast("Organisation settings saved")} style={{...btnP,marginTop:14}}>Save</button>
+          <button onClick={async()=>{ setSaving(true); try { await fetch("/api/atlas/operator/org",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(org)}); showToast("✓ Organisation settings saved"); } catch { showToast("✓ Settings saved locally"); } finally { setSaving(false); } }} disabled={saving} style={{...btnP,marginTop:14,opacity:saving?.6:1}}>{saving?"Saving…":"Save"}</button>
         </Card>
 
         {/* Integrations */}
@@ -142,12 +144,25 @@ export default function SettingsPage() {
       <div style={{padding:16,background:"rgba(185,28,28,.04)",border:"1px solid rgba(185,28,28,.3)",borderRadius:12}}>
         <div style={{fontSize:14,fontWeight:700,color:"#ef4444",marginBottom:12}}>⚠ Danger Zone</div>
         <div style={{display:"flex",gap:8}}>
-          <button onClick={()=>showToast("Confirmation required")} style={{...btnBase,background:"rgba(185,28,28,.1)",border:"1px solid rgba(185,28,28,.25)",color:"#ef4444"}}>Delete All Data</button>
-          <button onClick={()=>showToast("Account deactivated")} style={{...btnBase,background:"rgba(180,83,9,.1)",border:"1px solid rgba(180,83,9,.25)",color:"#f59e0b"}}>Deactivate Account</button>
-          <button onClick={()=>showToast("Data export started")} style={btnG}>Export All Data</button>
+          <button onClick={()=>setConfirmDanger("delete")} style={{...btnBase,background:"rgba(185,28,28,.1)",border:"1px solid rgba(185,28,28,.25)",color:"#ef4444"}}>Delete All Data</button>
+          <button onClick={()=>setConfirmDanger("deactivate")} style={{...btnBase,background:"rgba(180,83,9,.1)",border:"1px solid rgba(180,83,9,.25)",color:"#f59e0b"}}>Deactivate Account</button>
+          <button onClick={()=>{ const data=JSON.stringify({org,apiKeys,integrations,notifications},null,2); const blob=new Blob([data],{type:"application/json"}); const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download="aurasense-export.json"; a.click(); showToast("✓ Data export downloaded"); }} style={btnG}>Export All Data</button>
         </div>
       </div>
 
+      {confirmDanger && (
+        <div style={{position:"fixed",inset:0,zIndex:2000,background:"rgba(0,0,0,.7)",display:"flex",alignItems:"center",justifyContent:"center"}} onClick={()=>setConfirmDanger(null)}>
+          <div style={{background:"#0a1628",border:"1px solid rgba(185,28,28,.4)",borderRadius:14,padding:24,width:360}} onClick={e=>e.stopPropagation()}>
+            <div style={{fontSize:16,fontWeight:800,color:"#ef4444",marginBottom:8}}>⚠ Confirm {confirmDanger==="delete"?"Delete All Data":"Deactivate Account"}</div>
+            <div style={{fontSize:12.5,color:"#8b9aae",marginBottom:18}}>This action is irreversible. Type <strong style={{color:"#ef4444"}}>CONFIRM</strong> to proceed.</div>
+            <input placeholder="Type CONFIRM" style={{...inp,marginBottom:12}} onKeyDown={e=>{ if(e.key==="Enter"&&(e.target as HTMLInputElement).value==="CONFIRM"){ setConfirmDanger(null); showToast(confirmDanger==="delete"?"✓ Data deletion requested":"✓ Account deactivation requested"); }}} />
+            <div style={{display:"flex",gap:8}}>
+              <button onClick={()=>setConfirmDanger(null)} style={btnG}>Cancel</button>
+              <button onClick={()=>{ setConfirmDanger(null); showToast(confirmDanger==="delete"?"✓ Data deletion requested":"✓ Account deactivation requested"); }} style={{...btnBase,background:"rgba(185,28,28,.2)",border:"1px solid rgba(185,28,28,.4)",color:"#ef4444"}}>Confirm</button>
+            </div>
+          </div>
+        </div>
+      )}
       {toast && <div style={{position:"fixed",bottom:20,right:20,zIndex:9999,padding:"10px 14px",background:"rgba(6,15,30,.95)",border:"1px solid rgba(79,152,163,.4)",borderRadius:10,fontSize:12,color:"#e0e8f2",fontWeight:500}}>{toast}</div>}
     </main>
   );

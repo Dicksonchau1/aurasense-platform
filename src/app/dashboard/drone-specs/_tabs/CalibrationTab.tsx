@@ -70,7 +70,14 @@ export default function CalibrationTab() {
         </div>
         <div style={{display:"flex",gap:8,marginTop:14}}>
           <button onClick={runCal} disabled={running} style={{...btnP,opacity:running?.6:1}}>▶ {running?"Running…":"Run Full Calibration"}</button>
-          <button onClick={()=>showToast("Log exported")} style={btnG}>Export Log</button>
+          <button onClick={()=>{
+            const rows = ["id,title,status,duration_s", ...steps.map(s=>`${s.id},"${s.title}",${s.done?"done":s.running?"running":"pending"},${s.duration}`)].join("\n");
+            const blob = new Blob([rows],{type:"text/csv"});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a"); a.href=url; a.download=`calibration-log-${new Date().toISOString().slice(0,10)}.csv`; a.click();
+            URL.revokeObjectURL(url);
+            showToast("✓ Calibration log exported");
+          }} style={btnG}>Export Log</button>
           <button onClick={()=>{setSteps(CAL_STEPS.map(s=>({...s,running:false,done:s.ok,progress:s.ok?100:0})));setRunning(false);}} style={btnG}>Reset</button>
         </div>
       </Card>
