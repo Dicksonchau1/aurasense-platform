@@ -100,7 +100,7 @@ export default function SkillsPage() {
                 <div style={{fontSize:13,fontWeight:700,color:"#e0e8f2",marginBottom:2}}>{s.name}</div>
                 <div style={{fontSize:10.5,color:"#8b9aae"}}>{s.category} · v{s.version}</div>
               </div>
-              <div style={{width:8,height:8,borderRadius:"50%",background:STATUS_COLORS[s.status]???"#8b9aae",marginTop:4,boxShadow:s.status==="active"?`0 0 6px ${STATUS_COLORS[s.status]}`:"none"}} />
+              <div style={{width:8,height:8,borderRadius:"50%",background:STATUS_COLORS[s.status]??"#8b9aae",marginTop:4,boxShadow:s.status==="active"?`0 0 6px ${STATUS_COLORS[s.status]}`:"none"}} />
             </div>
             <div style={{fontSize:11.5,color:"#8b9aae",marginBottom:10,lineHeight:1.5}}>{s.description}</div>
             <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:10}}>

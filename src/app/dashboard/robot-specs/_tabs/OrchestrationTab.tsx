@@ -58,8 +58,7 @@ export default function OrchestrationTab() {
           {stages.map((s,i) => (
             <div key={s.name} style={{display:"flex",alignItems:"center",flexShrink:0}}>
               <div style={{padding:"6px 10px",borderRadius:7,background:"rgba(34,197,94,.1)",border:"1px solid rgba(34,197,94,.25)",textAlign:"center",minWidth:90}}>
-                <div style={{fontSize:9.5,fontWeight:700,color:"#22c55e",fontFamily:"ui-monospace,monospace"}}>{s.name.replace(/ /g,"
-")}</div>
+                <div style={{fontSize:9.5,fontWeight:700,color:"#22c55e",fontFamily:"ui-monospace,monospace",whiteSpace:"pre-line"}}>{s.name}</div>
                 <div style={{fontSize:9,color:"#8b9aae",marginTop:3}}>{s.hz} Hz · {s.ms} ms</div>
               </div>
               {i < stages.length-1 && <div style={{width:16,height:1,background:"rgba(79,152,163,.4)",flexShrink:0}} />}
