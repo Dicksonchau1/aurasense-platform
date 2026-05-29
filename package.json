@@ -12,9 +12,11 @@
     },
     "dependencies": {
         "@tanstack/react-query": "^5.100.10",
+        "@types/mapbox-gl": "^3.5.0",
         "@types/three": "^0.184.1",
         "clsx": "^2.1.1",
         "lucide-react": "^1.16.0",
+        "mapbox-gl": "^3.24.0",
         "next": "latest",
         "next-auth": "^4.24.14",
         "react": "latest",
