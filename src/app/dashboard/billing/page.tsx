@@ -1,328 +1,142 @@
-﻿/* eslint-disable react/jsx-no-comment-textnodes */
-"use client";;
-import { useState } from "react";
-import Link from "next/link";
+"use client";
+import { useEffect, useState } from "react";
+import { Card, Badge, Row } from "../_components/SpecCard";
 
-type PlanId = "starter" | "pro" | "enterprise";
-
-interface Plan {
-  id: PlanId;
-  name: string;
-  price: string;
-  cadence: string;
-  blurb: string;
-  features: string[];
-  highlight?: boolean;
-  cta: string;
+interface UsageTelemetry {
+  today: { frames: number; bytes: number; flights: number; };
+  quota: { frames_per_day: number; bytes_per_day: number; flights_per_month: number; };
+  frame_pct_used: number; bytes_pct_used: number;
 }
 
-const PLANS: Plan[] = [
-  {
-    id: "starter",
-    name: "Starter",
-    price: "HKD 399",
-    cadence: "/ month",
-    blurb: "Solo operators running occasional inspections.",
-    features: [
-      "1 drone seat",
-      "1,000 inspection frames / month",
-      "30-day audit retention",
-      "Mission planner",
-      "Email support",
-    ],
-    cta: "Current plan",
-  },
-  {
-    id: "pro",
-    name: "Team",
-    price: "HKD 2,800",
-    cadence: "/ month",
-    blurb: "Small teams running scheduled inspections.",
-    features: [
-      "5 drone seats",
-      "10,000 frames / month",
-      "90-day audit retention",
-      "NEPA learning loop",
-      "Mission planner + world model",
-      "Priority email support",
-    ],
-    highlight: true,
-    cta: "Upgrade to Team",
-  },
-  {
-    id: "enterprise",
-    name: "Enterprise",
-    price: "Custom",
-    cadence: "",
-    blurb: "Critical-infrastructure operators with SLAs.",
-    features: [
-      "Unlimited seats",
-      "Unlimited frames",
-      "7-year audit retention",
-      "Fleet deconfliction",
-      "Humanoid + tendon orchestration",
-      "Dedicated NEPA tenant",
-      "24x7 phone support",
-      "Custom compliance reports",
-    ],
-    cta: "Contact sales",
-  },
+const PLANS = [
+  { key:"pilot_starter", name:"Pilot Starter", sub:"1 drone · Pilot",  price:"HK$980",  features:["1 drone registration","50K frames/day","500MB/day","15 flights/mo","HKCAD reports"], current:false },
+  { key:"starter",       name:"Starter",       sub:"Up to 2 drones",   price:"HK$2,200",features:["2 drone registrations","120K frames/day","1.2GB/day","30 flights/mo","HKCAD reports","Basic analytics"], current:true },
+  { key:"team",          name:"Pro Team",       sub:"Up to 10 drones",  price:"HK$8,800",features:["10 drone registrations","400K frames/day","4GB/day","100 flights/mo","World Model 3D","NEPA API access","Audit chain export","Carryover credits"], current:false },
+  { key:"enterprise",    name:"Enterprise",     sub:"Unlimited fleet",  price:"Custom",  features:["Unlimited drones","Unlimited frames","Unlimited storage","Dedicated NEPA cluster","White-label dashboard","SLA 99.95%","On-prem deployment","Custom integrations"], current:false },
 ];
 
-interface Invoice {
-  id: string;
-  date: string;
-  amount: string;
-  status: "paid" | "open" | "void";
-}
-
-const INVOICES: Invoice[] = [
-  { id: "INV-2026-0521", date: "2026-05-01", amount: "HKD 4,800.00", status: "paid" },
-  { id: "INV-2026-0489", date: "2026-04-01", amount: "HKD 4,800.00", status: "paid" },
-  { id: "INV-2026-0451", date: "2026-03-01", amount: "HKD 4,800.00", status: "paid" },
-  { id: "INV-2026-0414", date: "2026-02-01", amount: "HKD 4,800.00", status: "paid" },
-  { id: "INV-2026-0381", date: "2026-01-01", amount: "HKD 4,800.00", status: "paid" },
+const INVOICES = [
+  { id:"INV-2026-05", date:"2026-05-01", amount:"HK$2,200", status:"paid" },
+  { id:"INV-2026-04", date:"2026-04-01", amount:"HK$2,200", status:"paid" },
+  { id:"INV-2026-03", date:"2026-03-01", amount:"HK$2,200", status:"paid" },
+  { id:"INV-2026-02", date:"2026-02-01", amount:"HK$2,200", status:"paid" },
+  { id:"INV-2026-01", date:"2026-01-01", amount:"HK$2,200", status:"paid" },
 ];
-
-interface Usage {
-  label: string;
-  used: number;
-  cap: number;
-  unit: string;
-}
-
-const USAGE: Usage[] = [
-  { label: "Frames captured",       used: 6420, cap: 10000, unit: "frames" },
-  { label: "Drone seats",           used: 3,    cap: 5,     unit: "seats" },
-  { label: "NEPA inference hours",  used: 142,  cap: 250,   unit: "hours" },
-  { label: "Audit storage",         used: 18.4, cap: 50,    unit: "GB" },
-];
-
-function StatusPill({ s }: { s: Invoice["status"] }) {
-  const color = s === "paid" ? "#22c55e" : s === "open" ? "#f59e0b" : "#6b7280";
-  return (
-    <span
-      style={{
-        fontSize: 11,
-        padding: "2px 8px",
-        borderRadius: 999,
-        background: "#1a1f26",
-        color,
-        border: "1px solid " + color + "33",
-        textTransform: "uppercase",
-        letterSpacing: ".08em",
-      }}
-    >
-      {s}
-    </span>
-  );
-}
-
-function UsageBar({ u }: { u: Usage }) {
-  const pct = Math.max(0, Math.min(100, (u.used / u.cap) * 100));
-  const color = pct > 90 ? "#ef4444" : pct > 70 ? "#f59e0b" : "#22d3ee";
-  return (
-    <div>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4 }}>
-        <span style={{ opacity: 0.85 }}>{u.label}</span>
-        <span style={{ fontFamily: "monospace", opacity: 0.8 }}>
-          {u.used} / {u.cap} {u.unit}
-        </span>
-      </div>
-      <div style={{ height: 8, borderRadius: 999, background: "#1a1f26", overflow: "hidden" }}>
-        <div style={{ width: pct + "%", height: "100%", background: color, transition: "width .25s ease" }} />
-      </div>
-    </div>
-  );
-}
-
-const PlanCard = (
-  { plan, current, onPick }: { plan: Plan; current: PlanId; onPick: (id: PlanId) => void }
-): import("react/jsx-runtime").JSX.Element => {
-  const isCurrent = plan.id === current;
-  return (
-    <div
-      style={{
-        position: "relative",
-        padding: 18,
-        border: plan.highlight ? "1px solid #22d3ee" : "1px solid #1a1f26",
-        borderRadius: 10,
-        background: plan.highlight ? "linear-gradient(180deg,#0e1c25,#0b141a)" : "#0e1217",
-      }}
-    >
-      {plan.highlight && (
-        <div
-          style={{
-            position: "absolute",
-            top: -10,
-            right: 14,
-            fontSize: 10,
-            padding: "2px 8px",
-            borderRadius: 999,
-            background: "#22d3ee",
-            color: "#0b0d10",
-            fontWeight: 700,
-            letterSpacing: ".08em",
-          }}
-        >
-          POPULAR
-        </div>
-      )}
-      <div style={{ fontSize: 12, opacity: 0.7, letterSpacing: ".1em", textTransform: "uppercase" }}>{plan.name}</div>
-      <div style={{ marginTop: 6, display: "flex", alignItems: "baseline", gap: 4 }}>
-        <div style={{ fontSize: 28, fontWeight: 800 }}>{plan.price}</div>
-        <div style={{ opacity: 0.6, fontSize: 13 }}>{plan.cadence}</div>
-      </div>
-      <div style={{ fontSize: 12, opacity: 0.7, marginTop: 6 }}>{plan.blurb}</div>
-      <ul style={{ listStyle: "none", padding: 0, margin: "12px 0", display: "grid", gap: 6 }}>
-        {plan.features.map((f) => (
-          <li key={f} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{ color: "#22c55e" }}>{String.fromCharCode(10003)}</span>
-            <span style={{ opacity: 0.9 }}>{f}</span>
-          </li>
-        ))}
-      </ul>
-      <button
-        onClick={() => onPick(plan.id)}
-        disabled={isCurrent}
-        style={{
-          width: "100%",
-          padding: "10px 12px",
-          borderRadius: 8,
-          background: isCurrent ? "#1a1f26" : plan.highlight ? "#22d3ee" : "#11151a",
-          color: isCurrent ? "#9ca3af" : plan.highlight ? "#0b0d10" : "#e7ecf3",
-          border: plan.highlight ? "none" : "1px solid #1a1f26",
-          fontWeight: 700,
-          fontSize: 13,
-          cursor: isCurrent ? "default" : "pointer",
-        }}
-      >
-        {isCurrent ? "Current plan" : plan.cta}
-      </button>
-    </div>
-  );
-};
 
 export default function BillingPage() {
-  const [current, setCurrent] = useState<PlanId>("pro");
+  const [usage, setUsage] = useState<UsageTelemetry|null>(null);
+  const [toast, setToast] = useState("");
+  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(""), 2500); };
+
+  useEffect(() => {
+    fetch("/api/atlas/operator/telemetry")
+      .then(r => r.ok ? r.json() : null)
+      .then(j => { if (j?.data) setUsage(j.data); })
+      .catch(() => {});
+  }, []);
+
+  const fmtBytes = (b: number) => b > 1e9 ? (b/1e9).toFixed(1)+"GB" : (b/1e6).toFixed(0)+"MB";
 
   return (
-    <main style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-      <header>
-        <div style={{ fontSize: 12, opacity: 0.6, marginBottom: 4 }}>
-          <Link href="/dashboard" style={{ color: "#22d3ee", textDecoration: "none" }}>
-            Dashboard
-          </Link>
-          <span style={{ margin: "0 8px", opacity: 0.4 }}>/</span>
-          <span>Billing</span>
+    <main style={{display:"flex",flexDirection:"column",gap:14}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div>
+          <h1 style={{fontSize:22,margin:0,color:"#e0e8f2"}}>Billing & Plans</h1>
+          <div style={{fontSize:12,color:"#8b9aae",marginTop:2}}>Manage your subscription, usage, and invoices</div>
         </div>
-        <h1 style={{ fontSize: 22, margin: 0 }}>Billing &amp; Plans</h1>
-        <p style={{ opacity: 0.6, margin: "4px 0 0", fontSize: 13 }}>
-          Manage your subscription, payment method, usage, and invoice history.
-        </p>
-      </header>
-      <section style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12 }}>
-        {PLANS.map((p) => (
-          <PlanCard key={p.id} plan={p} current={current} onPick={setCurrent} />
-        ))}
-      </section>
-      <section style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-        <div style={{ padding: 14, border: "1px solid #1a1f26", borderRadius: 8, background: "#0e1217" }}>
-          <div style={{ fontSize: 12, opacity: 0.6, marginBottom: 10, textTransform: "uppercase", letterSpacing: ".08em" }}>
-            Payment method
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div
-              style={{
-                width: 44,
-                height: 28,
-                borderRadius: 4,
-                background: "linear-gradient(135deg,#1e3a8a,#0ea5e9)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 10,
-                fontWeight: 800,
-                letterSpacing: ".08em",
-              }}
-            >
-              VISA
-            </div>
-            <div>
-              <div style={{ fontFamily: "monospace" }}>{"\u2022\u2022\u2022\u2022 \u2022\u2022\u2022\u2022 \u2022\u2022\u2022\u2022 6411"}</div>
-              <div style={{ fontSize: 11, opacity: 0.6 }}>Expires 09/28 - Dickson Chau</div>
-            </div>
-            <button
-              style={{
-                marginLeft: "auto",
-                padding: "6px 10px",
-                borderRadius: 6,
-                background: "#11151a",
-                border: "1px solid #1a1f26",
-                color: "#e7ecf3",
-                fontSize: 12,
-                cursor: "pointer",
-                            }}
-            >
-              Update
-            </button>
-          </div>
-        </div>
+        <Badge kind="warn">Starter Plan</Badge>
+      </div>
 
-        <div style={{ padding: 14, border: "1px solid #1a1f26", borderRadius: 8, background: "#0e1217" }}>
-          <div style={{ fontSize: 12, opacity: 0.6, marginBottom: 10, textTransform: "uppercase", letterSpacing: ".08em" }}>
-            Usage this period
+      {/* Plans */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:11}}>
+        {PLANS.map(p => (
+          <div key={p.key} style={{padding:14,background:p.current?"linear-gradient(160deg,rgba(79,152,163,.1),rgba(59,93,141,.07))":"linear-gradient(180deg,rgba(218,226,236,.06),rgba(202,213,224,.03))",border:`1px solid ${p.current?"rgba(79,152,163,.5)":"#1a1f26"}`,borderRadius:12}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+              <div>
+                <div style={{fontSize:14,fontWeight:800,color:"#e0e8f2"}}>{p.name}</div>
+                <div style={{fontSize:11,color:"#8b9aae"}}>{p.sub}</div>
+              </div>
+              {p.current && <Badge kind="warn">Current</Badge>}
+            </div>
+            <div style={{fontSize:22,fontWeight:800,color:"#5ab8d0",marginBottom:12}}>{p.price}{p.price!=="Custom"&&<span style={{fontSize:11,fontWeight:500,color:"#8b9aae"}}>/mo</span>}</div>
+            <div style={{display:"flex",flexDirection:"column",gap:4,fontSize:11.5,color:"#8b9aae",marginBottom:14}}>
+              {p.features.map(f => <div key={f}>✓ {f}</div>)}
+            </div>
+            {!p.current && (
+              <button onClick={()=>showToast(`Upgrade to ${p.name} initiated`)} style={{width:"100%",padding:"7px 0",borderRadius:7,fontSize:12,fontWeight:600,cursor:"pointer",background:p.key==="team"?"linear-gradient(135deg,#2e6b74,#4f98a3)":"rgba(255,255,255,.06)",border:p.key==="team"?"none":"1px solid #1a1f26",color:p.key==="team"?"#fff":"#cfd8e3"}}>
+                {p.key==="enterprise"?"Contact Sales":"Upgrade"}
+              </button>
+            )}
           </div>
-          <div style={{ display: "grid", gap: 10 }}>
-            {USAGE.map((u) => (
-              <UsageBar key={u.label} u={u} />
-            ))}
+        ))}
+      </div>
+
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+        {/* Payment */}
+        <Card title="Payment Method">
+          <div style={{background:"linear-gradient(135deg,#0a1628,#1a2a3e)",borderRadius:11,padding:16,marginBottom:12,color:"white"}}>
+            <div style={{fontSize:10,opacity:.6,marginBottom:8}}>VISA •••• 4892</div>
+            <div style={{fontSize:18,fontWeight:700,letterSpacing:".15em"}}>•••• •••• •••• 4892</div>
+            <div style={{display:"flex",justifyContent:"space-between",marginTop:12,fontSize:11,opacity:.7}}>
+              <span>AuraSense Ltd.</span><span>09/28</span>
+            </div>
           </div>
-        </div>
-      </section>
-      <section style={{ border: "1px solid #1a1f26", borderRadius: 8, overflow: "hidden", background: "#0e1217" }}>
-        <div
-          style={{
-            padding: "10px 14px",
-            borderBottom: "1px solid #1a1f26",
-            fontSize: 12,
-            opacity: 0.7,
-            textTransform: "uppercase",
-            letterSpacing: ".08em",
-          }}
-        >
-          Invoice history
-        </div>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-          <thead style={{ background: "#11151a", textAlign: "left" }}>
-            <tr>
-              <th style={{ padding: "8px 12px" }}>Invoice</th>
-              <th style={{ padding: "8px 12px" }}>Date</th>
-              <th style={{ padding: "8px 12px" }}>Amount</th>
-              <th style={{ padding: "8px 12px" }}>Status</th>
-              <th style={{ padding: "8px 12px" }} />
-            </tr>
+          <button onClick={()=>showToast("Stripe card update")} style={{width:"100%",padding:"7px 0",borderRadius:7,fontSize:12,fontWeight:600,cursor:"pointer",background:"rgba(255,255,255,.06)",border:"1px solid #1a1f26",color:"#cfd8e3"}}>Update Card</button>
+        </Card>
+
+        {/* Usage */}
+        <Card title="Usage This Month">
+          {usage ? (
+            <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              {[
+                { label:"Frames Used",    used:usage.today.frames,    quota:usage.quota.frames_per_day,    pct:usage.frame_pct_used,  unit:"frames" },
+                { label:"Data Used",      used:usage.today.bytes,     quota:usage.quota.bytes_per_day,     pct:usage.bytes_pct_used,  unit:"bytes" },
+                { label:"Flights",        used:usage.today.flights,   quota:usage.quota.flights_per_month, pct:Math.round(usage.today.flights/Math.max(1,usage.quota.flights_per_month)*100), unit:"flights" },
+              ].map(u => (
+                <div key={u.label}>
+                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                    <span style={{fontSize:12,color:"#8b9aae"}}>{u.label}</span>
+                    <span style={{fontSize:11.5,fontFamily:"ui-monospace,monospace",color:"#cfd8e3"}}>
+                      {u.unit==="bytes"?fmtBytes(u.used):u.used.toLocaleString()} / {u.quota===-1?"∞":u.unit==="bytes"?fmtBytes(u.quota):u.quota.toLocaleString()}
+                    </span>
+                  </div>
+                  <div style={{height:5,background:"rgba(79,152,163,.15)",borderRadius:999,overflow:"hidden"}}>
+                    <div style={{width:(u.quota===-1?10:Math.min(100,u.pct))+"%",height:"100%",background:u.pct>80?"linear-gradient(90deg,#b45309,#ef4444)":"linear-gradient(90deg,#2e6b74,#4f98a3)",borderRadius:999}} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{fontSize:12,color:"#8b9aae",textAlign:"center",padding:20}}>Loading usage data…</div>
+          )}
+        </Card>
+      </div>
+
+      {/* Invoices */}
+      <Card title="Invoice History">
+        <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+          <thead>
+            <tr>{["Invoice ID","Date","Amount","Status","Action"].map(h=>(
+              <th key={h} style={{background:"rgba(59,93,141,.1)",color:"#8b9aae",fontWeight:600,fontSize:10.5,textTransform:"uppercase",letterSpacing:".06em",padding:"7px 10px",textAlign:"left",borderBottom:"1px solid #1a1f26"}}>{h}</th>
+            ))}</tr>
           </thead>
           <tbody>
-            {INVOICES.map((inv) => (
-              <tr key={inv.id} style={{ borderTop: "1px solid #1a1f26" }}>
-                <td style={{ padding: "8px 12px", fontFamily: "monospace" }}>{inv.id}</td>
-                <td style={{ padding: "8px 12px", opacity: 0.8 }}>{inv.date}</td>
-                <td style={{ padding: "8px 12px", fontFamily: "monospace" }}>{inv.amount}</td>
-                <td style={{ padding: "8px 12px" }}>
-                  <StatusPill s={inv.status} />
-                </td>
-                <td className="invoice-download-cell">
-                  <a href="#" style={{ color: "#22d3ee", textDecoration: "none", fontSize: 12 }}>
-                    Download PDF
-                  </a>
+            {INVOICES.map(inv => (
+              <tr key={inv.id} style={{borderBottom:"1px solid rgba(26,31,38,.6)"}}>
+                <td style={{padding:"8px 10px",fontFamily:"ui-monospace,monospace",color:"#5ab8d0"}}>{inv.id}</td>
+                <td style={{padding:"8px 10px",color:"#cfd8e3"}}>{inv.date}</td>
+                <td style={{padding:"8px 10px",fontWeight:700,color:"#e0e8f2"}}>{inv.amount}</td>
+                <td style={{padding:"8px 10px"}}><Badge kind="ok">{inv.status}</Badge></td>
+                <td style={{padding:"8px 10px"}}>
+                  <button onClick={()=>showToast(`Downloading ${inv.id}`)} style={{padding:"3px 9px",borderRadius:5,fontSize:10,fontWeight:600,cursor:"pointer",background:"rgba(255,255,255,.05)",border:"1px solid #1a1f26",color:"#cfd8e3"}}>Download</button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-      </section>
+      </Card>
+
+      {toast && <div style={{position:"fixed",bottom:20,right:20,zIndex:9999,padding:"10px 14px",background:"rgba(6,15,30,.95)",border:"1px solid rgba(79,152,163,.4)",borderRadius:10,fontSize:12,color:"#e0e8f2",fontWeight:500}}>{toast}</div>}
     </main>
   );
 }
-
