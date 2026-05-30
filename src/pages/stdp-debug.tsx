@@ -1,9 +1,7 @@
-import dynamic from 'next/dynamic';
-
-const StdpDebugPanel = dynamic(
-  () => import('stdp-debug/StdpDebugPanel'),
-  { ssr: false }
-);
+// Stub STDP Debug Panel
+function StdpDebugPanel() {
+  return <div>STDP Debug Panel (stub)</div>;
+}
 
 export default function StdpDebugPage() {
   return (

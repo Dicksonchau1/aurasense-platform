@@ -28,4 +28,8 @@ export class PolygonEngineOrchestrator {
   }
 }
 
+export function orchestratorSessionHandler(deps: OrchestratorDeps) {
+  return new PolygonEngineOrchestrator(deps);
+}
+
 export default PolygonEngineOrchestrator;

@@ -23,6 +23,18 @@ export default function LoginPage() {
     else router.push(`/login?error=${encodeURIComponent(res?.error ?? "Invalid")}`);
   }
 
+  async function handleDemoLogin() {
+    setBusy(true);
+    const res = await signIn("credentials", { 
+      email: "demo@atlas.local", 
+      password: "demo123", 
+      redirect: false, 
+      callbackUrl 
+    });
+    setBusy(false);
+    if (res?.ok) router.push(callbackUrl);
+  }
+
   const cardStyle: React.CSSProperties = { width: 380, padding: 32, background: "#111827", borderRadius: 12, border: "1px solid #1f2937" };
   const inputStyle: React.CSSProperties = { width: "100%", padding: "9px 12px", background: "#0a0e15", border: "1px solid #1f2937", borderRadius: 6, color: "#e5e7eb", fontSize: 14, marginBottom: 12, boxSizing: "border-box" };
   const labelStyle: React.CSSProperties = { display: "block", fontSize: 13, color: "#9ca3af", marginBottom: 4 };
@@ -42,9 +54,9 @@ export default function LoginPage() {
           </div>
         )}
 
-        <button onClick={() => signIn("github", { callbackUrl })}
-          style={{ width: "100%", padding: "10px 14px", background: "#24292f", color: "#fff", border: "none", borderRadius: 6, fontSize: 15, fontWeight: 600, cursor: "pointer", marginBottom: 16 }}>
-          Continue with GitHub
+        <button onClick={handleDemoLogin} disabled={busy}
+          style={{ width: "100%", padding: "10px 14px", background: "#3b82f6", color: "#fff", border: "none", borderRadius: 6, fontSize: 15, fontWeight: 600, cursor: busy ? "not-allowed" : "pointer", marginBottom: 16, opacity: busy ? 0.6 : 1 }}>
+          {busy ? "Loading..." : "Demo Login"}
         </button>
 
         <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "16px 0", color: "#6b7280", fontSize: 12 }}>

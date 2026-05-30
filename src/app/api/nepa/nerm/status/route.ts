@@ -51,7 +51,17 @@ export function setNermMode(mode: NermMode): NermStatus {
   return nermState
 }
 
+export { nermState }
+
 export async function GET() {
   if (nermMode === 'ACTIVE') activateNerm()
   return NextResponse.json(envelope(nermState))
+}
+
+export async function POST(req: Request) {
+  const body = await req.json()
+  const { mode } = body
+  if (!mode) return NextResponse.json({ error: 'Missing mode' }, { status: 400 })
+  const state = setNermMode(mode)
+  return NextResponse.json(envelope(state))
 }

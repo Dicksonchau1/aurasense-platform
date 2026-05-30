@@ -1,5 +1,3 @@
-'use client';
-
 import { AccountManagerView } from '@/atlas/csm/AccountManagerView';
 
 export const dynamic = 'force-dynamic';

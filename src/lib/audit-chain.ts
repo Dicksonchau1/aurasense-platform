@@ -61,4 +61,11 @@ export function verifyChain(): { ok: boolean; brokenAt?: number } {
   return { ok: true };
 }
 
-export default { appendAudit, getChain, getChainHead, verifyChain };
+export function envelope<T>(data: T): { data: T; audit_head: AuditEntry | null } {
+  return {
+    data,
+    audit_head: getChainHead(),
+  };
+}
+
+export default { appendAudit, getChain, getChainHead, verifyChain, envelope };

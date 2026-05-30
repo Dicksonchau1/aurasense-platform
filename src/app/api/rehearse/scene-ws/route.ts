@@ -18,11 +18,9 @@ export function broadcastSceneEvent(sessionId: string, event: SceneEvent): void 
 }
 
 // WebSocket route handler (Next.js 13+ edge runtime compatible)
-export const config = {
-  runtime: 'edge',
-};
+export const runtime = 'edge';
 
-export default async function handler(req: Request) {
+export async function POST(req: Request) {
   // Only handle WebSocket upgrade
   if (req.headers.get('upgrade') !== 'websocket') {
     return new Response('Not a websocket request', { status: 400 });
